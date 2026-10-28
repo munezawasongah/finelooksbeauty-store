@@ -6,10 +6,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
   Check,
+  ChevronLeft,
+  ChevronRight,
   DoorOpen,
   Footprints,
   Hand,
   HelpCircle,
+  Image as ImageIcon,
+  MapPin,
+  Phone,
   List,
   Map as MapIcon,
   Maximize2,
@@ -23,7 +28,8 @@ import {
   Star,
   X,
 } from "lucide-react";
-import { PRODUCT_BY_ID, SECTIONS, TOUR_PRODUCTS, productsIn, usd, type SectionKey, type TourProduct } from "./catalog";
+import { PRODUCT_BY_ID, SECTIONS, STORE_PHONE, TOUR_PRODUCTS, priceLabel, productsIn, usd, type SectionKey, type TourProduct } from "./catalog";
+import { STORE_PHOTOS } from "@/lib/store-photos";
 import { createTour, type TourHandle } from "./engine";
 import { Joystick, Minimap, createPoseStore } from "./Controls";
 import { ProductPreview } from "./ProductPreview";
@@ -144,7 +150,7 @@ export default function StoreTour() {
     setHelp(false);
     writeStorage(HELP_KEY, true);
   };
-  const goTo = (k: SectionKey | "entrance") => {
+  const goTo = (k: SectionKey | "entrance" | "photos") => {
     setListOpen(false);
     handleRef.current?.goTo(k);
   };
@@ -202,7 +208,9 @@ export default function StoreTour() {
   const basketTotal = basket.reduce((n, l) => n + (PRODUCT_BY_ID.get(l.id)?.priceCents ?? 0) * l.qty, 0);
   const current = section ? SECTIONS.find((s) => s.key === section) : null;
   const product = selected ? PRODUCT_BY_ID.get(selected) ?? null : null;
-  const hovered = hover && !touch ? PRODUCT_BY_ID.get(hover.id) : null;
+  const hovered = hover && !touch ? PRODUCT_BY_ID.get(hover.id) ?? null : null;
+  const hoveredPhoto = hover && !touch && hover.id.startsWith("gallery:") ? STORE_PHOTOS[Number(hover.id.slice(8))] : null;
+  const galleryIndex = selected?.startsWith("gallery:") ? Number(selected.slice(8)) : null;
 
   return (
     <div
@@ -268,6 +276,9 @@ export default function StoreTour() {
                 <SectionChip onClick={() => goTo("entrance")} active={!section}>
                   <DoorOpen size={14} aria-hidden /> Entrance
                 </SectionChip>
+                <SectionChip onClick={() => goTo("photos")} active={false}>
+                  <ImageIcon size={14} aria-hidden /> Store photos
+                </SectionChip>
                 {SECTIONS.map((s) => (
                   <SectionChip key={s.key} onClick={() => goTo(s.key)} active={section === s.key}>
                     {s.label}
@@ -299,8 +310,34 @@ export default function StoreTour() {
         >
           <p className="text-[0.62rem] font-bold tracking-[0.12em] text-iris-600 uppercase">{hovered.brand}</p>
           <p className="max-w-[14rem] truncate text-sm font-bold">{hovered.name}</p>
-          <p className="font-display text-base text-iris-700">{usd(hovered.priceCents)} <span className="ml-1 text-xs font-semibold text-muted">· click to view</span></p>
+          <p className="font-display text-base text-iris-700">{priceLabel(hovered.priceCents)} <span className="ml-1 text-xs font-semibold text-muted">· click to view</span></p>
         </div>
+      )}
+
+      {hoveredPhoto && hover && !selected && (
+        <div
+          className="pointer-events-none fixed z-30 -translate-x-1/2 -translate-y-[calc(100%+14px)] rounded-xl bg-white px-3 py-2 text-ink shadow-2xl"
+          style={{ left: hover.x, top: hover.y }}
+          role="tooltip"
+        >
+          <p className="text-[0.62rem] font-bold tracking-[0.12em] text-iris-600 uppercase">Our Garner store</p>
+          <p className="text-sm font-bold">{hoveredPhoto.caption} <span className="ml-1 text-xs font-semibold text-muted">· click to enlarge</span></p>
+        </div>
+      )}
+
+      {galleryIndex != null && STORE_PHOTOS[galleryIndex] && (
+        <GalleryPanel
+          index={galleryIndex}
+          onClose={closeProduct}
+          onStep={(d) => {
+            const pics = STORE_PHOTOS.filter((ph) => ph.src.includes("/store-photos/store-"));
+            const cur = pics.indexOf(STORE_PHOTOS[galleryIndex]);
+            const next = pics[(cur + d + pics.length) % pics.length];
+            const id = `gallery:${STORE_PHOTOS.indexOf(next)}`;
+            setSelected(id);
+            handleRef.current?.select(id);
+          }}
+        />
       )}
 
       {/* toast */}
@@ -347,7 +384,7 @@ export default function StoreTour() {
                           <span className="block truncate text-sm font-bold text-ink">{p.name}</span>
                           <span className="text-xs text-muted">{p.brand}</span>
                         </span>
-                        <span className="shrink-0 font-display text-base text-iris-700">{usd(p.priceCents)}</span>
+                        <span className="shrink-0 font-display text-base text-iris-700">{priceLabel(p.priceCents)}</span>
                       </button>
                     </li>
                   ))}
@@ -388,7 +425,7 @@ export default function StoreTour() {
                           </button>
                         </div>
                       </div>
-                      <p className="shrink-0 font-display text-lg text-iris-700">{usd(p.priceCents * l.qty)}</p>
+                      <p className="shrink-0 font-display text-lg text-iris-700">{usd((p.priceCents ?? 0) * l.qty)}</p>
                     </li>
                   );
                 })}
@@ -519,8 +556,8 @@ function ProductPanel({
       aria-labelledby="tour-product-title"
       className="absolute inset-x-0 bottom-0 z-30 flex max-h-[78%] flex-col overflow-hidden rounded-t-[1.75rem] bg-white text-ink shadow-[0_-20px_60px_-20px_rgba(0,0,0,0.5)] sm:inset-x-auto sm:top-3 sm:right-3 sm:bottom-3 sm:max-h-none sm:w-[24rem] sm:rounded-[1.75rem]"
     >
-      <div className="relative h-52 shrink-0 bg-[radial-gradient(90%_90%_at_50%_30%,#ffffff_0%,#f3eefe_55%,#e7dcfb_100%)] sm:h-64">
-        <ProductPreview make={makePreview} reducedMotion={reducedMotion} />
+      <div className={`relative shrink-0 bg-[radial-gradient(90%_90%_at_50%_30%,#ffffff_0%,#f3eefe_55%,#e7dcfb_100%)] ${p.photos ? "h-64 sm:h-80" : "h-52 sm:h-64"}`}>
+        {p.photos ? <PhotoViewer photos={p.photos} alt={p.name} /> : <ProductPreview make={makePreview} reducedMotion={reducedMotion} />}
         <button
           ref={closeRef}
           type="button"
@@ -531,9 +568,11 @@ function ProductPanel({
           <X size={18} aria-hidden />
         </button>
         {p.badge && <span className="chip absolute top-4 left-4 bg-ink text-white">{p.badge}</span>}
-        <span className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-white/80 px-3 py-1 text-[0.65rem] font-bold tracking-[0.1em] text-ink-soft uppercase">
-          Drag to spin
-        </span>
+        {!p.photos && (
+          <span className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-white/80 px-3 py-1 text-[0.65rem] font-bold tracking-[0.1em] text-ink-soft uppercase">
+            Drag to spin
+          </span>
+        )}
       </div>
       <div className="flex-1 overflow-y-auto p-5 sm:p-6">
         <p className="text-[0.68rem] font-bold tracking-[0.16em] text-iris-600 uppercase">
@@ -542,6 +581,7 @@ function ProductPanel({
         <h2 id="tour-product-title" className="mt-1 font-display text-2xl leading-tight">
           {p.name}
         </h2>
+        {p.reviews > 0 && (
         <div className="mt-2 flex items-center gap-2 text-sm">
           <span className="flex text-orchid-500" aria-hidden>
             {Array.from({ length: 5 }, (_, i) => (
@@ -552,8 +592,9 @@ function ProductPanel({
             {p.rating.toFixed(1)} <span className="text-muted">({p.reviews})</span>
           </span>
         </div>
+        )}
         <p className="mt-3 flex items-baseline gap-2">
-          <span className="font-display text-3xl text-iris-700">{usd(p.priceCents)}</span>
+          <span className={`font-display text-iris-700 ${p.priceCents == null ? "text-2xl" : "text-3xl"}`}>{priceLabel(p.priceCents)}</span>
           {p.compareAtCents && <span className="text-sm text-muted line-through">{usd(p.compareAtCents)}</span>}
         </p>
 
@@ -580,6 +621,16 @@ function ProductPanel({
           </fieldset>
         ))}
 
+        {p.priceCents == null ? (
+          <div className="mt-5 grid gap-2">
+            <a href={`tel:+1${STORE_PHONE.replace(/\D/g, "")}`} className="btn btn-primary w-full">
+              <Phone size={16} aria-hidden /> Call to check stock & price
+            </a>
+            <Link href="/visit" className="btn btn-outline w-full">
+              <MapPin size={16} aria-hidden /> Visit us in Garner
+            </Link>
+          </div>
+        ) : (
         <div className="mt-5 flex items-center gap-2">
           <div className="inline-flex items-center rounded-full border border-line">
             <button type="button" aria-label="One less" onClick={() => setQty((q) => Math.max(1, q - 1))} className="flex h-11 w-10 items-center justify-center">
@@ -596,15 +647,81 @@ function ProductPanel({
             <ShoppingBasket size={16} aria-hidden /> Add to basket
           </button>
         </div>
+        )}
 
         <p className="mt-5 text-sm leading-relaxed text-ink-soft">{p.description}</p>
 
         <Link href={section.shopHref} className="mt-5 flex items-center justify-between rounded-2xl border border-line px-4 py-3 text-sm font-bold text-ink hover:border-iris-300">
           Shop {section.name.toLowerCase()} online <ArrowRight size={16} aria-hidden />
         </Link>
-        <p className="mt-4 text-xs text-muted">Sample product shown for the store preview.</p>
+        <p className="mt-4 text-xs text-muted">
+          {p.photos ? "Photographed in our Garner store. Stock and styles change often, so call ahead if you're coming in for it." : "Sample product shown for the store preview."}
+        </p>
       </div>
     </aside>
+  );
+}
+
+/** Swipeable real photos of a product (main photo first). */
+function PhotoViewer({ photos, alt }: { photos: string[]; alt: string }) {
+  const [i, setI] = useState(0);
+  return (
+    <div className="absolute inset-0">
+      {/* eslint-disable-next-line @next/next/no-img-element -- local photo inside the client-only tour */}
+      <img src={photos[i]} alt={alt} className="h-full w-full object-cover" />
+      {photos.length > 1 && (
+        <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5 rounded-full bg-white/85 p-1.5 shadow">
+          {photos.map((src, k) => (
+            <button
+              key={src}
+              type="button"
+              aria-label={`Photo ${k + 1} of ${photos.length}`}
+              aria-pressed={k === i}
+              onClick={() => setI(k)}
+              className={`h-2.5 rounded-full transition-all ${k === i ? "w-6 bg-iris-600" : "w-2.5 bg-ink/25"}`}
+            />
+          ))}
+        </div>
+      )}
+      <span className="absolute bottom-3 left-3 rounded-full bg-ink/80 px-2.5 py-1 text-[0.62rem] font-bold tracking-[0.12em] text-white uppercase">
+        Real photo
+      </span>
+    </div>
+  );
+}
+
+/** A framed store photo from the wall, shown large. */
+function GalleryPanel({ index, onClose, onStep }: { index: number; onClose: () => void; onStep: (d: number) => void }) {
+  const ph = STORE_PHOTOS[index];
+  const closeRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    closeRef.current?.focus({ preventScroll: true });
+  }, []);
+  return (
+    <div role="dialog" aria-modal="true" aria-label={`Store photo: ${ph.caption}`} className="absolute inset-0 z-40 flex flex-col bg-ink/92 backdrop-blur-sm" onClick={onClose}>
+      <div className="flex items-center justify-between px-4 py-3 text-white" onClick={(e) => e.stopPropagation()}>
+        <p className="min-w-0 truncate text-sm font-semibold">
+          <span className="text-orchid-200">Our Garner store · </span>
+          {ph.caption}
+        </p>
+        <button ref={closeRef} type="button" onClick={onClose} aria-label="Close" className="flex h-11 w-11 items-center justify-center rounded-full hover:bg-white/10">
+          <X size={20} aria-hidden />
+        </button>
+      </div>
+      <div className="relative min-h-0 flex-1" onClick={(e) => e.stopPropagation()}>
+        {/* eslint-disable-next-line @next/next/no-img-element -- local photo inside the client-only tour */}
+        <img src={ph.src} alt={ph.alt} className="h-full w-full object-contain p-2 sm:p-6" />
+        <button type="button" aria-label="Previous photo" onClick={() => onStep(-1)} className="absolute top-1/2 left-2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-ink shadow-xl sm:left-4">
+          <ChevronLeft size={20} aria-hidden />
+        </button>
+        <button type="button" aria-label="Next photo" onClick={() => onStep(1)} className="absolute top-1/2 right-2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-ink shadow-xl sm:right-4">
+          <ChevronRight size={20} aria-hidden />
+        </button>
+      </div>
+      <p className="px-6 pt-2 pb-4 text-center text-sm text-white/70" onClick={(e) => e.stopPropagation()}>
+        {ph.alt}
+      </p>
+    </div>
   );
 }
 

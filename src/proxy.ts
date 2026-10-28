@@ -95,6 +95,6 @@ async function notFound(req: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|brand/|media/|api/|icon.png|apple-icon.png|favicon.ico|robots.txt|sitemap.xml|manifest.webmanifest).*)",
+    "/((?!_next/static|_next/image|brand/|media/|store-photos/|tour/|api/|icon.png|apple-icon.png|favicon.ico|robots.txt|sitemap.xml|manifest.webmanifest).*)",
   ],
 };

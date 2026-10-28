@@ -48,14 +48,25 @@ export function StoreForm({ store }: { store: StoreInfo }) {
       </div>
       <fieldset>
         <legend className="label">Opening hours (Eastern Time). Leave all blank to show “call for hours”.</legend>
+        <p className="mb-2 text-xs text-muted">
+          “Summer closes” is optional: it replaces the closing time while daylight saving time is on (mid-March to early November).
+        </p>
+        <div className="mb-1 hidden grid-cols-[7rem_1fr_1fr_1fr_auto] gap-2 text-[0.7rem] font-bold text-muted uppercase md:grid">
+          <span>Day</span>
+          <span>Opens</span>
+          <span>Closes</span>
+          <span>Summer closes</span>
+          <span />
+        </div>
         <div className="grid gap-2">
           {DAYS.map((d) => {
             const h = hour(d);
             return (
-              <div key={d} className="grid grid-cols-[7rem_1fr_1fr_auto] items-center gap-2 text-sm">
-                <span className="font-semibold">{d}</span>
+              <div key={d} className="grid grid-cols-2 items-center gap-2 text-sm md:grid-cols-[7rem_1fr_1fr_1fr_auto]">
+                <span className="col-span-2 font-semibold md:col-span-1">{d}</span>
                 <input type="time" name={`open_${d}`} defaultValue={h?.open ?? ""} aria-label={`${d} opens`} className="field !py-1.5" />
                 <input type="time" name={`close_${d}`} defaultValue={h?.close ?? ""} aria-label={`${d} closes`} className="field !py-1.5" />
+                <input type="time" name={`summer_${d}`} defaultValue={h?.summerClose ?? ""} aria-label={`${d} closes in summer`} className="field !py-1.5" />
                 <label className="flex items-center gap-1.5 text-xs">
                   <input type="checkbox" name={`closed_${d}`} defaultChecked={Boolean(h && !h.open)} className="h-4 w-4 accent-iris-600" /> Closed
                 </label>
@@ -64,8 +75,6 @@ export function StoreForm({ store }: { store: StoreInfo }) {
           })}
         </div>
       </fieldset>
-      <div className="grid gap-4 md:grid-cols-2">
-      </div>
       <fieldset className="space-y-3">
         <legend className="label">Social media pages</legend>
         <p className="text-xs text-muted">

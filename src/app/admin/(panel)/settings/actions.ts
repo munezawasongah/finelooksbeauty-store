@@ -29,7 +29,13 @@ export async function saveStore(_: SetState, f: FormData): Promise<SetState> {
     const closed = f.get(`closed_${day}`) === "on";
     const open = str(f, `open_${day}`, 5);
     const close = str(f, `close_${day}`, 5);
-    return { day, open: closed || !open ? null : open, close: closed || !close ? null : close };
+    const summer = str(f, `summer_${day}`, 5);
+    return {
+      day,
+      open: closed || !open ? null : open,
+      close: closed || !close ? null : close,
+      summerClose: closed || !summer || summer === close ? null : summer,
+    };
   });
   const allBlank = hours.every((h) => !h.open && !h.close) && !DAYS.some((d) => f.get(`closed_${d}`) === "on");
   const before = await getSetting("store");

@@ -3,7 +3,10 @@ import { Suspense } from "react";
 import { Clock, Mail, MapPin, Navigation, Phone } from "lucide-react";
 import { PageHero } from "@/components/store/PageHero";
 import { JsonLd } from "@/components/store/JsonLd";
-import { getSettings, type StoreInfo } from "@/server/settings";
+import { getSettings } from "@/server/settings";
+import { HoursTable, OpenNow } from "@/components/store/StoreHours";
+import { StoreGallery } from "@/components/store/StoreGallery";
+import { STORE_PHOTOS } from "@/lib/store-photos";
 import { localBusinessJsonLd, organizationJsonLd } from "@/lib/seo";
 import { socialLinks } from "@/lib/social";
 import { SocialIcon, SocialLinks } from "@/components/store/SocialLinks";
@@ -32,17 +35,10 @@ export default function VisitPage() {
   );
 }
 
-function to12h(t: string | null) {
-  if (!t) return "";
-  const [h, m] = t.split(":").map(Number);
-  const suffix = h >= 12 ? "PM" : "AM";
-  return `${((h + 11) % 12) + 1}${m ? `:${String(m).padStart(2, "0")}` : ""} ${suffix}`;
-}
-
 async function Content() {
   const { store } = await getSettings(["store"]);
   const address = [store.streetAddress, `${store.city}, ${store.state} ${store.zip}`.trim()].filter(Boolean).join(", ");
-  const mapsQuery = encodeURIComponent(store.streetAddress ? `${store.name}, ${address}` : store.mapEmbedQuery);
+  const mapsQuery = encodeURIComponent(store.streetAddress ? `${store.legalName}, ${address}` : store.mapEmbedQuery);
   const tel = store.phone.replace(/\D/g, "");
   return (
     <div className="container-x grid gap-8 pb-24 lg:grid-cols-[1fr_1.2fr]">
@@ -68,7 +64,10 @@ async function Content() {
           </a>
         </InfoCard>
         <InfoCard icon={<Clock size={20} aria-hidden />} title="Opening hours">
-          <Hours store={store} />
+          <div className="mb-3">
+            <OpenNow hours={store.hours} />
+          </div>
+          <HoursTable hours={store.hours} />
         </InfoCard>
         <InfoCard icon={<Phone size={20} aria-hidden />} title="Call or email">
           <p>
@@ -101,31 +100,22 @@ async function Content() {
       <div className="relative min-h-[24rem] overflow-hidden rounded-[var(--radius-card)] border border-line bg-mist">
         <iframe
           title={`Map showing ${store.name}`}
-          src={`https://www.google.com/maps?q=${mapsQuery}&output=embed`}
+          src={`https://www.google.com/maps?q=${mapsQuery}&z=16&output=embed`}
           className="absolute inset-0 h-full w-full"
           loading="lazy"
           referrerPolicy="no-referrer-when-downgrade"
         />
       </div>
+      <section aria-labelledby="inside-heading" className="pt-8 lg:col-span-2">
+        <p className="eyebrow mb-2">Inside the store</p>
+        <h2 id="inside-heading" className="mb-6 font-display text-3xl font-light sm:text-4xl">
+          A look <em className="accent">around.</em>
+        </h2>
+        <StoreGallery photos={STORE_PHOTOS} />
+      </section>
       <JsonLd data={localBusinessJsonLd(store)} />
       <JsonLd data={organizationJsonLd(store)} />
     </div>
-  );
-}
-
-function Hours({ store }: { store: StoreInfo }) {
-  if (!store.hours.length) {
-    return <p className="text-ink-soft">Call the store for today&apos;s hours.</p>;
-  }
-  return (
-    <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-1.5">
-      {store.hours.map((h) => (
-        <div key={h.day} className="contents">
-          <dt className="font-semibold">{h.day}</dt>
-          <dd className="text-ink-soft">{h.open && h.close ? `${to12h(h.open)} – ${to12h(h.close)}` : "Closed"}</dd>
-        </div>
-      ))}
-    </dl>
   );
 }
 

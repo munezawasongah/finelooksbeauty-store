@@ -1,4 +1,5 @@
 import type { StoreInfo } from "@/server/settings";
+import { hoursFor } from "./hours";
 
 export const SITE_URL = (process.env.APP_URL ?? "http://localhost:3000").replace(/\/$/, "");
 
@@ -39,9 +40,10 @@ export function localBusinessJsonLd(store: StoreInfo) {
       ...(store.zip ? { postalCode: store.zip } : {}),
       addressCountry: "US",
     },
-    ...(store.hours.length
+    ...(store.hours.some((h) => h.open && h.close)
       ? {
-          openingHours: store.hours
+          // the hours in force this season (Friday closes later in summer)
+          openingHours: hoursFor(store.hours)
             .filter((h) => h.open && h.close)
             .map((h) => `${DAY_MAP[h.day] ?? h.day} ${h.open}-${h.close}`),
         }

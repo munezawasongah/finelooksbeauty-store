@@ -5,7 +5,9 @@
  */
 import { sql } from "drizzle-orm";
 import { db, pool } from "../src/server/db";
-import { categories, locations, shippingMethods } from "../src/server/db/schema";
+import { categories, locations, settings, shippingMethods } from "../src/server/db/schema";
+import { eq } from "drizzle-orm";
+import { DEFAULT_STORE } from "../src/server/settings";
 
 const CATEGORIES = [
   {
@@ -66,6 +68,21 @@ async function main() {
       { name: "FedEx 2Day", carrier: "FedEx", amountCents: 2495, freeOverCents: null, minDays: 2, maxDays: 2, sortOrder: 2 },
     ]);
     console.log("Created starter shipping methods.");
+  }
+
+  // Store details saved before the address and hours were known: fill only the blanks.
+  const row = await db().query.settings.findFirst({ where: eq(settings.key, "store") });
+  if (row) {
+    const v = row.value as Record<string, unknown>;
+    const patch: Record<string, unknown> = {};
+    if (!v.streetAddress) patch.streetAddress = DEFAULT_STORE.streetAddress;
+    if (!v.zip) patch.zip = DEFAULT_STORE.zip;
+    if (!Array.isArray(v.hours) || !(v.hours as { open: string | null }[]).some((h) => h.open)) patch.hours = DEFAULT_STORE.hours;
+    if (!v.streetAddress && (!v.mapEmbedQuery || v.mapEmbedQuery === "Fine Looks Hair and Beauty Store, Garner, NC")) patch.mapEmbedQuery = DEFAULT_STORE.mapEmbedQuery;
+    if (Object.keys(patch).length) {
+      await db().update(settings).set({ value: { ...v, ...patch }, updatedAt: new Date() }).where(eq(settings.key, "store"));
+      console.log(`Filled store details: ${Object.keys(patch).join(", ")}.`);
+    }
   }
 }
 

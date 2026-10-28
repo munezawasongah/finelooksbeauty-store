@@ -2,6 +2,7 @@ import { eq, inArray } from "drizzle-orm";
 import { db, type Tx } from "./db";
 import { settings } from "./db/schema";
 import { requestTime } from "./dynamic";
+import type { DayHours } from "@/lib/hours";
 
 export type StoreInfo = {
   name: string;
@@ -14,7 +15,8 @@ export type StoreInfo = {
   state: string;
   zip: string;
   directionsNote: string;
-  hours: { day: string; open: string | null; close: string | null }[];
+  /** Monday first; `summerClose` applies during daylight saving time. */
+  hours: DayHours[];
   instagram: string;
   facebook: string;
   tiktok: string;
@@ -57,19 +59,27 @@ export const DEFAULT_STORE: StoreInfo = {
   tagline: "From One Sister to Another",
   phone: "(919) 803-6420",
   email: "info@finelooksbeautystore.com",
-  streetAddress: "",
+  streetAddress: "106 Bratton Dr, Suite 5",
   city: "Garner",
   state: "NC",
-  zip: "",
+  zip: "27529",
   directionsNote: "Off Highway 42, just behind Cook Out",
-  /** Empty until the client confirms opening hours (document section 18). */
-  hours: [],
+  /** From the shop door: Sun–Thu 9:30–7, Fri 9:30–4:30 (winter) / 9:30–7 (summer), Sat closed. */
+  hours: [
+    { day: "Monday", open: "09:30", close: "19:00" },
+    { day: "Tuesday", open: "09:30", close: "19:00" },
+    { day: "Wednesday", open: "09:30", close: "19:00" },
+    { day: "Thursday", open: "09:30", close: "19:00" },
+    { day: "Friday", open: "09:30", close: "16:30", summerClose: "19:00" },
+    { day: "Saturday", open: null, close: null },
+    { day: "Sunday", open: "09:30", close: "19:00" },
+  ],
   instagram: "",
   facebook: "",
   tiktok: "",
   youtube: "",
   googleBusinessUrl: "",
-  mapEmbedQuery: "Fine Looks Hair and Beauty Store, Garner, NC",
+  mapEmbedQuery: "Fine Looks Hair and Beauty Store, 106 Bratton Dr Suite 5, Garner, NC 27529",
 };
 
 export const DEFAULT_COMMERCE: CommerceSettings = {

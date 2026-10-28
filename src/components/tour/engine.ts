@@ -6,7 +6,8 @@
 import * as THREE from "three";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
-import { SECTIONS, usd, type SectionKey, type TourProduct } from "./catalog";
+import { SECTIONS, TOUR_PHOTO_URLS, priceLabel, type SectionKey, type TourProduct } from "./catalog";
+import { STORE_PHOTOS } from "@/lib/store-photos";
 import { acquireModelCache, buildProductModel, releaseModelCache, type BuiltModel } from "./models";
 import {
   BRAND,
@@ -57,7 +58,7 @@ export type TourOptions = {
 
 export type TourHandle = {
   layout: TourLayout;
-  goTo: (key: SectionKey | "entrance") => void;
+  goTo: (key: SectionKey | "entrance" | "photos") => void;
   focusProduct: (id: string) => void;
   teleport: (x: number, z: number) => void;
   setMove: (forward: number, turn: number) => void;
@@ -380,10 +381,23 @@ export async function createTour(canvas: HTMLCanvasElement, opts: TourOptions): 
   const tagPlacements = new Map<string, Placement[]>();
   const hookMatrices: THREE.Matrix4[] = [];
 
+  opts.onProgress(0.24, "Hanging the photos");
+  const photoImages = new Map<string, HTMLImageElement>();
+  const galleryImages = new Map<string, HTMLImageElement>();
+  await Promise.all([
+    ...TOUR_PHOTO_URLS.map(async (u) => {
+      const img = await loadImage(u);
+      if (img) photoImages.set(u, img);
+    }),
+    ...STORE_PHOTOS.filter((ph) => ph.src.includes("/store-photos/store-")).map(async (ph) => {
+      const img = await loadImage(ph.src);
+      if (img) galleryImages.set(ph.src, img);
+    }),
+  ]);
   const total = opts.products.length;
   let done = 0;
   for (const p of opts.products) {
-    const built = buildProductModel(p, fonts, high ? 1 : 0.65);
+    const built = buildProductModel(p, fonts, high ? 1 : 0.65, photoImages);
     built.group = compactGroup(built.group);
     templates.set(p.id, built);
     done++;
@@ -435,7 +449,7 @@ export async function createTour(canvas: HTMLCanvasElement, opts: TourOptions): 
   // price tags
   for (const [pid, list] of tagPlacements) {
     const p = opts.products.find((x) => x.id === pid)!;
-    const tex = priceTagTexture(fonts, p.short, usd(p.priceCents), p.badge);
+    const tex = priceTagTexture(fonts, p.short, p.priceCents == null ? "In store" : priceLabel(p.priceCents), p.badge);
     const mat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.6 });
     const geo = new THREE.PlaneGeometry(0.15, 0.047);
     disposables.push(tex, mat, geo);
@@ -462,6 +476,8 @@ export async function createTour(canvas: HTMLCanvasElement, opts: TourOptions): 
     scene.add(im);
     disposables.push(geo);
   }
+
+  photoGallery();
 
   // Invisible hit boxes, one per product block: generous tap targets, and one draw-free raycast.
   const hitBoxes = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial(), slots.length);
@@ -790,13 +806,17 @@ export async function createTour(canvas: HTMLCanvasElement, opts: TourOptions): 
   }
 
   /* --------------------------- sections --------------------------- */
-  const viewpoints = new Map<SectionKey | "entrance", { x: number; z: number; yaw: number; pitch: number }>();
+  const viewpoints = new Map<SectionKey | "entrance" | "photos", { x: number; z: number; yaw: number; pitch: number }>();
   for (const f of faces) viewpoints.set(f.section, lookAtPose(f.view.pos[0], f.view.pos[1], ...f.view.look));
   viewpoints.set("entrance", { x: 0, z: 12.6, yaw: 0, pitch: -0.04 });
+  // the framed store photos on the left wall by the checkout
+  viewpoints.set("photos", lookAtPose(-6.0, 10.1, -9.3, 1.72, 10.1));
   const tourOrder: SectionKey[] = ["wigs", "bundles", "braiding", "haircare", "cosmetics", "tools", "featured"];
 
   let lastSection: SectionKey | null | undefined;
   function currentSection(): SectionKey | null {
+    // the front of house (checkout, podium, photo walls) isn't an aisle
+    if (pose.z > WALL_Z1 + 0.6) return null;
     let best: SectionKey | null = null;
     let bestD = 6.5;
     const fwdX = -Math.sin(pose.yaw);
@@ -1281,6 +1301,73 @@ export async function createTour(canvas: HTMLCanvasElement, opts: TourOptions): 
     add(new THREE.CylinderGeometry(0.012, 0.012, 1.0, 8), M.chrome, cx - 1.45, 0.5, cz + 0.4);
     add(new THREE.CylinderGeometry(0.16, 0.16, 0.02, 24), M.ink, cx - 1.45, 0.01, cz + 0.4);
     return spots;
+  }
+
+  /** The real store's photos, framed on the walls either side of the entrance. */
+  function photoGallery() {
+    const pics = STORE_PHOTOS.filter((ph) => galleryImages.has(ph.src));
+    if (!pics.length) return;
+    const left = pics.slice(0, Math.ceil(pics.length / 2));
+    const right = pics.slice(Math.ceil(pics.length / 2));
+    const frameMat = new THREE.MeshStandardMaterial({ color: BRAND.ink, roughness: 0.35, metalness: 0.2 });
+    const matMat = new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.6 });
+    disposables.push(frameMat, matMat);
+    const wall = (list: typeof pics, side: -1 | 1) => {
+      const x = side * (WALL_X - 0.03);
+      const normal = new THREE.Vector3(-side, 0, 0);
+      const q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), side < 0 ? Math.PI / 2 : -Math.PI / 2);
+      const zs = list.map((_, i) => 6.9 + ((13.2 - 6.9) / list.length) * (i + 0.5));
+      // header sign over the group
+      const sign = texPlane(fasciaTexture(fonts, "Garner, NC", "Our real store", emblem, 6 / 0.5), 6, 0.5, {});
+      const sm = add(sign.geo, sign.mat, x + side * -0.01, 3.02, (zs[0] + zs[zs.length - 1]) / 2, { receive: false });
+      sm.quaternion.copy(q);
+      sm.updateMatrix();
+      list.forEach((ph, i) => {
+        const img = galleryImages.get(ph.src)!;
+        const landscape = ph.width >= ph.height;
+        const h = landscape ? 0.98 : 1.24;
+        const w = (h * ph.width) / ph.height;
+        const cy = 1.78;
+        const z = zs[i];
+        const tex = new THREE.Texture(img);
+        tex.colorSpace = THREE.SRGBColorSpace;
+        tex.anisotropy = 4;
+        tex.needsUpdate = true;
+        const pm = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.5 });
+        disposables.push(tex, pm);
+        const group = new THREE.Group();
+        group.position.set(x, cy, z);
+        group.quaternion.copy(q);
+        group.add(new THREE.Mesh(new THREE.BoxGeometry(w + 0.14, h + 0.14, 0.04), frameMat));
+        const m1 = new THREE.Mesh(new THREE.PlaneGeometry(w + 0.08, h + 0.08), matMat);
+        m1.position.z = 0.021;
+        const m2 = new THREE.Mesh(new THREE.PlaneGeometry(w, h), pm);
+        m2.position.z = 0.022;
+        group.add(m1, m2);
+        // picture light
+        const lamp = new THREE.Mesh(new THREE.BoxGeometry(Math.min(0.6, w * 0.6), 0.025, 0.06), M.light);
+        lamp.position.set(0, h / 2 + 0.13, 0.05);
+        group.add(lamp);
+        // caption plaque
+        const capTex = fasciaTexture(fonts, `Photo ${pics.indexOf(ph) + 1} of ${pics.length}`, ph.caption, null, (w + 0.14) / 0.16);
+        const capMat = new THREE.MeshStandardMaterial({ map: capTex, roughness: 0.5 });
+        disposables.push(capTex, capMat);
+        const cap = new THREE.Mesh(new THREE.PlaneGeometry(w + 0.14, 0.16), capMat);
+        cap.position.set(0, -h / 2 - 0.2, 0.021);
+        group.add(cap);
+        group.traverse((o) => {
+          if (o instanceof THREE.Mesh) {
+            disposables.push(o.geometry);
+            o.receiveShadow = high;
+          }
+        });
+        scene.add(group);
+        const center = new THREE.Vector3(x, cy - 0.05, z).addScaledVector(normal, 0.03);
+        pushSlot(`gallery:${STORE_PHOTOS.indexOf(ph)}`, center, new THREE.Vector3(w + 0.16, h + 0.5, 0.08), q, normal);
+      });
+    };
+    wall(left, -1);
+    wall(right, 1);
   }
 
   function plant(x: number, z: number) {

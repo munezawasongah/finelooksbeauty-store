@@ -618,10 +618,88 @@ function buildTool(p: TourProduct, spec: Extract<ModelSpec, { kind: "tool" }>, f
 }
 
 /* ------------------------------------------------------------------ */
+/* Real store photos on display                                        */
+/* ------------------------------------------------------------------ */
+
+function photoTexture(img: HTMLImageElement) {
+  const t = new THREE.Texture(img);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 4;
+  t.needsUpdate = true;
+  return t;
+}
+
+/** Plaque under a photo: "IN STORE" / name / price. */
+function plaqueTexture(f: Fonts, p: TourProduct) {
+  const c = document.createElement("canvas");
+  c.width = 512;
+  c.height = 160;
+  const ctx = c.getContext("2d")!;
+  ctx.fillStyle = BRAND.ink;
+  ctx.fillRect(0, 0, 512, 160);
+  ctx.fillStyle = BRAND.orchid;
+  ctx.fillRect(0, 0, 512, 8);
+  ctx.fillStyle = "#d8ccff";
+  ctx.font = `800 24px ${f.sans}`;
+  ctx.fillText("FROM OUR GARNER STORE", 28, 50);
+  ctx.fillStyle = "#ffffff";
+  let size = 40;
+  ctx.font = `600 ${size}px ${f.display}`;
+  while (ctx.measureText(p.short).width > 300 && size > 20) ctx.font = `600 ${--size}px ${f.display}`;
+  ctx.fillText(p.short, 28, 112);
+  ctx.textAlign = "right";
+  ctx.fillStyle = "#f0d4ff";
+  ctx.font = `600 ${p.priceCents == null ? 26 : 44}px ${f.display}`;
+  ctx.fillText(p.priceCents == null ? "Ask in store" : `$${(p.priceCents / 100).toFixed(2)}`, 488, 112);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+function buildPhoto(p: TourProduct, f: Fonts, photos: Map<string, HTMLImageElement>, hang: boolean): BuiltModel {
+  const g = new THREE.Group();
+  const img = p.photos?.[0] ? photos.get(p.photos[0]) : undefined;
+  const photoMat = img
+    ? mat(`photo:${p.id}`, () => new THREE.MeshStandardMaterial({ map: photoTexture(img), roughness: 0.55 }))
+    : plastic(BRAND.mist, 0.6);
+  const plaque = texMat(`plaque:${p.id}`, () => plaqueTexture(f, p), 0.5);
+  const frame = plastic(BRAND.ink, 0.35);
+  const white = plastic("#ffffff", 0.4);
+  if (hang) {
+    // pegboard card: header with hang hole, photo, price plaque
+    const w = 0.22;
+    const ph = (w - 0.02) * (4 / 3);
+    const h = 0.05 + ph + 0.06;
+    g.add(mesh(new THREE.BoxGeometry(w, h, 0.006), white, 0, -h / 2, 0.006));
+    g.add(mesh(new THREE.TorusGeometry(0.009, 0.003, 6, 14), metal("#cfc8d8"), 0, -0.018, 0.01));
+    g.add(mesh(new THREE.PlaneGeometry(w - 0.02, ph), photoMat, 0, -0.05 - ph / 2, 0.0105));
+    g.add(mesh(new THREE.PlaneGeometry(w - 0.02, 0.05), plaque, 0, -h + 0.033, 0.0105));
+    return { group: g, w: w + 0.02, h, d: 0.03, mount: "hang", facings: 1 };
+  }
+  // acrylic shelf display: framed 3:4 photo leaning back slightly on a stand, plaque in front
+  const pw = 0.27;
+  const ph = pw * (4 / 3);
+  const tilt = -0.1;
+  const panel = new THREE.Group();
+  panel.add(mesh(new THREE.BoxGeometry(pw + 0.03, ph + 0.03, 0.018), frame, 0, 0, 0));
+  panel.add(mesh(new THREE.PlaneGeometry(pw, ph), photoMat, 0, 0, 0.0095));
+  panel.position.set(0, 0.035 + (ph + 0.03) / 2, -0.01);
+  panel.rotation.x = tilt;
+  g.add(panel);
+  g.add(mesh(new THREE.BoxGeometry(pw + 0.05, 0.03, 0.12), frame, 0, 0.015, 0));
+  const pl = mesh(new THREE.PlaneGeometry(pw + 0.04, 0.0125 * 10), plaque, 0, 0.0, 0);
+  pl.scale.set(1, 0.36, 1);
+  pl.position.set(0, 0.03, 0.061);
+  pl.rotation.x = -0.35;
+  g.add(pl);
+  return { group: g, w: 0.36, h: ph + 0.07, d: 0.14, mount: "shelf", facings: 1 };
+}
+
+/* ------------------------------------------------------------------ */
 /* Entry point                                                         */
 /* ------------------------------------------------------------------ */
 
-export function buildProductModel(p: TourProduct, f: Fonts, level = 1): BuiltModel {
+export function buildProductModel(p: TourProduct, f: Fonts, level = 1, photos: Map<string, HTMLImageElement> = new Map()): BuiltModel {
   detail = level;
   const seed = hashString(p.id) % 997;
   const s = p.model;
@@ -638,5 +716,7 @@ export function buildProductModel(p: TourProduct, f: Fonts, level = 1): BuiltMod
       return buildCosmetic(p, s, f, seed);
     case "tool":
       return buildTool(p, s, f);
+    case "photo":
+      return buildPhoto(p, f, photos, p.section === "braiding" || p.section === "bundles");
   }
 }

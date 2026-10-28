@@ -17,7 +17,9 @@ export type ModelSpec =
   | { kind: "braid"; colors: [string, string?]; style: "stretched" | "kanekalon" | "crochet" | "locs" }
   | { kind: "bottle"; shape: "shampoo" | "pump" | "jar" | "spray" | "tube" | "oil" | "gel"; color: string; cap: string; label: string }
   | { kind: "cosmetic"; shape: "lipstick" | "palette" | "foundation" | "gloss" | "compact" | "lashes" | "polish"; color: string; accent?: string }
-  | { kind: "tool"; shape: "paddle" | "comb" | "flatiron" | "dryer" | "bonnet" | "wand" | "brushset" | "mirror"; color: string; accent?: string };
+  | { kind: "tool"; shape: "paddle" | "comb" | "flatiron" | "dryer" | "bonnet" | "wand" | "brushset" | "mirror"; color: string; accent?: string }
+  /** A real product photographed in the Garner store, shown on the shelf as a framed photo display. */
+  | { kind: "photo" };
 
 export type TourProduct = {
   id: string;
@@ -26,9 +28,12 @@ export type TourProduct = {
   /** Short name printed on packaging and shelf labels. */
   short: string;
   brand: string;
-  priceCents: number;
+  /** null = price not published; the panel says "Price in store". */
+  priceCents: number | null;
   compareAtCents?: number;
-  badge?: "New" | "Best seller" | "Sale" | "Limited";
+  badge?: "New" | "Best seller" | "Sale" | "Limited" | "In store";
+  /** Real photos from the store (first one is the main photo). */
+  photos?: string[];
   rating: number;
   reviews: number;
   description: string;
@@ -77,7 +82,71 @@ const C = {
 
 const LENGTHS = ['12"', '14"', '16"', '18"', '20"', '22"', '24"', '26"', '28"', '30"'];
 
-export const TOUR_PRODUCTS: TourProduct[] = [
+/** The store's own number, for "call to check stock" on products without a listed price. */
+export const STORE_PHONE = "(919) 803-6420";
+
+const P = (f: string) => `/store-photos/${f}.webp`;
+
+/** Products photographed in the Garner store. They lead each section so they're the first thing you see. */
+const REAL_PRODUCTS: TourProduct[] = [
+  {
+    id: "real-goddess-locs", section: "wigs", name: "Goddess Locs Wig", short: "Goddess Locs Wig", brand: "Fine Looks Hair & Beauty",
+    priceCents: 2999, badge: "In store", rating: 4.9, reviews: 0, featured: true,
+    description: "Pre-twisted goddess locs with curly ends on a ready-to-wear cap, as displayed in our Garner store.",
+    photos: [P("wig-goddess-locs")], model: { kind: "photo" },
+  },
+  {
+    id: "real-fake-scalp", section: "wigs", name: "HD Fake Scalp Body Wave Lace Wig", short: "Fake Scalp Body Wave", brand: "In store now",
+    priceCents: null, badge: "In store", rating: 0, reviews: 0, featured: true,
+    description: "Long body wave lace wig with a natural-looking fake scalp part. Ask in store about lengths and today's price.",
+    photos: [P("wig-fake-scalp-body-wave")], model: { kind: "photo" },
+  },
+  {
+    id: "real-straight-layered", section: "wigs", name: "Straight Layered Wig with Side Bangs", short: "Layered Straight", brand: "In store now",
+    priceCents: null, badge: "In store", rating: 0, reviews: 0,
+    description: "Soft brown layered straight wig with face-framing side bangs.",
+    photos: [P("wig-straight-layered"), P("wig-straight-layered-side")], model: { kind: "photo" },
+  },
+  {
+    id: "real-side-part-lace", section: "wigs", name: "Side-Part Lace Front Wig", short: "Side-Part Lace", brand: "In store now",
+    priceCents: null, badge: "In store", rating: 0, reviews: 0,
+    description: "Jet black lace front with a deep side part and soft layers.",
+    photos: [P("wig-side-part-lace")], model: { kind: "photo" },
+  },
+  {
+    id: "real-ombre-wavy-headband", section: "wigs", name: "Ombré Body Wave Headband Wig", short: "Ombré Headband Wig", brand: "In store now",
+    priceCents: null, badge: "In store", rating: 0, reviews: 0,
+    description: "Throw-on-and-go headband wig with a dark root melting into honey blonde waves.",
+    photos: [P("wig-ombre-wavy-headband")], model: { kind: "photo" },
+  },
+  {
+    id: "real-burgundy-headband", section: "wigs", name: "Burgundy Ombré Straight Headband Wig", short: "Burgundy Headband Wig", brand: "In store now",
+    priceCents: null, badge: "In store", rating: 0, reviews: 0,
+    description: "Sleek straight headband wig, black root to deep burgundy.",
+    photos: [P("wig-burgundy-headband")], model: { kind: "photo" },
+  },
+  {
+    id: "real-copper-curly-headband", section: "wigs", name: "Copper Curly Headband Wig", short: "Copper Curly Wig", brand: "In store now",
+    priceCents: null, badge: "In store", rating: 0, reviews: 0,
+    description: "Big, bouncy copper curls on a comfortable headband base.",
+    photos: [P("wig-copper-curly-headband")], model: { kind: "photo" },
+  },
+  {
+    id: "real-curly-ombre-headband", section: "wigs", name: "Curly Ombré Headband Wig", short: "Curly Ombré Wig", brand: "In store now",
+    priceCents: null, badge: "In store", rating: 0, reviews: 0,
+    description: "Defined curls with a dark root fading to golden blonde, on a headband base.",
+    photos: [P("wig-curly-ombre-headband")], model: { kind: "photo" },
+  },
+  {
+    id: "real-soft-locs-36", section: "braiding", name: 'Fine Looks Soft Locs 36"', short: 'Soft Locs 36"', brand: "Fine Looks Hair & Beauty",
+    priceCents: 1299, badge: "In store", rating: 4.9, reviews: 0, featured: true,
+    description: "Our own Fine Looks soft locs, 36 inches, packed and priced in store. Light, soft and ready to crochet.",
+    options: [{ name: "Color", values: ["Honey Blonde", "Light Brown", "Auburn Brown", "Natural Black"] }],
+    photos: [P("locs-soft-36")], model: { kind: "photo" },
+  },
+];
+
+const SAMPLE_PRODUCTS: TourProduct[] = [
   /* ------------------------------ Wigs ------------------------------ */
   {
     id: "w1", section: "wigs", name: "Body Wave 13x4 HD Lace Front Wig", short: "Body Wave 13x4", brand: "Crown & Glory",
@@ -485,10 +554,19 @@ export const TOUR_PRODUCTS: TourProduct[] = [
   },
 ];
 
+export const TOUR_PRODUCTS: TourProduct[] = [...REAL_PRODUCTS, ...SAMPLE_PRODUCTS];
+
+/** Every photo the 3D store needs to load. */
+export const TOUR_PHOTO_URLS = [...new Set(TOUR_PRODUCTS.flatMap((p) => p.photos ?? []))];
+
 export const PRODUCT_BY_ID = new Map(TOUR_PRODUCTS.map((p) => [p.id, p]));
 
 export function productsIn(section: SectionKey) {
   return section === "featured" ? TOUR_PRODUCTS.filter((p) => p.featured) : TOUR_PRODUCTS.filter((p) => p.section === section);
+}
+
+export function priceLabel(cents: number | null) {
+  return cents == null ? "Price in store" : usd(cents);
 }
 
 export function usd(cents: number) {

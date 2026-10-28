@@ -17,12 +17,15 @@ import {
 import { ProductCard, ProductGridSkeleton } from "@/components/store/ProductCard";
 import { SectionHeading } from "@/components/store/SectionHeading";
 import { TourTeaser } from "@/components/store/TourTeaser";
+import { StoreGallery } from "@/components/store/StoreGallery";
+import { STORE_PHOTOS } from "@/lib/store-photos";
 import { catalogStats, listCategories, searchProducts } from "@/server/catalog";
 import { DEFAULT_HOME, DEFAULT_STORE, getSettings, type HomeContent, type StoreInfo } from "@/server/settings";
 import { JsonLd } from "@/components/store/JsonLd";
 import { localBusinessJsonLd } from "@/lib/seo";
 import { socialLinksAll } from "@/lib/social";
 import { SocialIcon } from "@/components/store/SocialLinks";
+import { HoursTable, OpenNow } from "@/components/store/StoreHours";
 
 export default function HomePage() {
   return (
@@ -94,6 +97,18 @@ export default function HomePage() {
       <Suspense fallback={<Faq faqs={DEFAULT_HOME.faqs} />}>
         <FaqData />
       </Suspense>
+
+      <section aria-labelledby="inside-heading" className="container-x pb-20 sm:pb-28">
+        <SectionHeading
+          id="inside-heading"
+          eyebrow="Inside the store"
+          title="Real shelves,"
+          accent="real stock."
+          href="/tour"
+          hrefLabel="Walk it in 3D"
+        />
+        <StoreGallery photos={STORE_PHOTOS} />
+      </section>
 
       <Suspense fallback={null}>
         <VisitBandData />
@@ -549,35 +564,59 @@ function Faq({ faqs }: { faqs: HomeContent["faqs"] }) {
 async function VisitBandData() {
   const { store } = await getSettings(["store"]);
   const tel = store.phone.replace(/\D/g, "");
+  const address = [store.streetAddress, `${store.city}, ${store.state} ${store.zip}`.trim()].filter(Boolean).join(", ");
+  const mapsQuery = encodeURIComponent(store.streetAddress ? `${store.legalName}, ${address}` : store.mapEmbedQuery);
   return (
-    <section className="container-x pb-20 sm:pb-28">
-      <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-orchid-500 via-orchid-600 to-iris-700 px-6 py-14 text-white sm:px-12 sm:py-16">
+    <section aria-labelledby="visit-heading" className="container-x pb-20 sm:pb-28">
+      <div className="relative grid overflow-hidden rounded-[2rem] bg-gradient-to-br from-orchid-500 via-orchid-600 to-iris-700 text-white lg:grid-cols-[1.05fr_1fr]">
         <div className="grain absolute inset-0 opacity-40" />
         <Image
           src="/brand/emblem.png"
           alt=""
           width={420}
           height={420}
-          className="pointer-events-none absolute -right-16 -bottom-20 opacity-15 brightness-0 invert"
+          className="pointer-events-none absolute -bottom-20 left-[38%] opacity-10 brightness-0 invert"
         />
-        <div className="relative max-w-2xl">
+        <div className="relative px-6 py-12 sm:px-12 sm:py-14">
           <p className="eyebrow text-orchid-100">Visit the store</p>
-          <h2 className="mt-3 text-[2.1rem] leading-[1.05] font-light sm:text-5xl">
+          <h2 id="visit-heading" className="mt-3 text-[2.1rem] leading-[1.05] font-light sm:text-5xl">
             Come see us in <em className="italic">{store.city}.</em>
           </h2>
-          <p className="mt-4 text-white/85">
-            {store.streetAddress ? `${store.streetAddress}, ` : ""}
-            {store.city}, {store.state} {store.zip}
-            {store.directionsNote ? ` · ${store.directionsNote}` : ""}
-          </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Link href="/visit" className="btn bg-white text-iris-700 hover:bg-orchid-50">
-              <MapPin size={17} aria-hidden /> Hours &amp; directions
-            </Link>
+          <address className="mt-4 text-white/90 not-italic">
+            {address}
+            {store.directionsNote && <span className="block text-white/75">{store.directionsNote}</span>}
+          </address>
+          <div className="mt-6 rounded-2xl bg-white/10 p-5 ring-1 ring-white/15 backdrop-blur-sm">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <p className="text-xs font-bold tracking-[0.16em] text-orchid-100 uppercase">Opening hours</p>
+              <OpenNow hours={store.hours} tone="dark" />
+            </div>
+            <div className="text-sm">
+              <HoursTable hours={store.hours} tone="dark" />
+            </div>
+          </div>
+          <div className="mt-7 flex flex-wrap gap-3">
+            <a
+              href={`https://www.google.com/maps/dir/?api=1&destination=${mapsQuery}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn bg-white text-iris-700 hover:bg-orchid-50"
+            >
+              <MapPin size={17} aria-hidden /> Get directions
+            </a>
             <a href={`tel:+1${tel}`} className="btn border-[1.5px] border-white/60 text-white hover:bg-white/10">
               Call {store.phone}
             </a>
           </div>
+        </div>
+        <div className="relative min-h-[20rem] bg-white/10 lg:min-h-full">
+          <iframe
+            title={`Map showing ${store.name} at ${address}`}
+            src={`https://www.google.com/maps?q=${mapsQuery}&z=16&output=embed`}
+            className="absolute inset-0 h-full w-full border-0"
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+          />
         </div>
       </div>
       <JsonLd data={localBusinessJsonLd(store)} />
