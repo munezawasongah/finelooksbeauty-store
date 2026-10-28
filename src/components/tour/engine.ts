@@ -552,21 +552,90 @@ export async function createTour(canvas: HTMLCanvasElement, opts: TourOptions): 
     return { x, z, yaw, pitch };
   }
 
-  type Glide = { from: typeof pose; to: typeof pose; t: number; dur: number; then?: () => void };
+  type P = { x: number; z: number; yaw: number; pitch: number };
+  type Glide = { legs: P[]; leg: number; from: P; to: P; t: number; dur: number; then?: () => void };
   let glide: Glide | null = null;
-  function glideTo(to: { x: number; z: number; yaw: number; pitch: number }, then?: () => void) {
+
+  /** True when walking in a straight line from a to b would pass through a fixture. */
+  function segmentBlocked(ax: number, az: number, bx: number, bz: number) {
+    const d = Math.hypot(bx - ax, bz - az);
+    const n = Math.max(1, Math.ceil(d / 0.2));
+    for (let i = 1; i < n; i++) {
+      const t = i / n;
+      if (blocked(ax + (bx - ax) * t, az + (bz - az) * t)) return true;
+    }
+    return false;
+  }
+
+  /** Waypoints from here to the target that walk round the shelf ends instead of through them. */
+  function route(tx: number, tz: number): { x: number; z: number }[] {
+    if (!segmentBlocked(pose.x, pose.z, tx, tz)) return [{ x: tx, z: tz }];
+    const crossAisles = [6.45, -10.65];
+    let best: { x: number; z: number }[] | null = null;
+    let bestLen = Infinity;
+    for (const zc of crossAisles) {
+      const pts = [
+        { x: pose.x, z: zc },
+        { x: tx, z: zc },
+        { x: tx, z: tz },
+      ];
+      let ok = true;
+      let len = 0;
+      let px = pose.x;
+      let pz = pose.z;
+      for (const q of pts) {
+        if (segmentBlocked(px, pz, q.x, q.z)) {
+          ok = false;
+          break;
+        }
+        len += Math.hypot(q.x - px, q.z - pz);
+        px = q.x;
+        pz = q.z;
+      }
+      if (ok && len < bestLen) {
+        bestLen = len;
+        best = pts;
+      }
+    }
+    return (best ?? [{ x: tx, z: tz }]).filter((q, i, arr) => i === arr.length - 1 || Math.hypot(q.x - (i ? arr[i - 1].x : pose.x), q.z - (i ? arr[i - 1].z : pose.z)) > 0.05);
+  }
+
+  function legDuration(from: P, to: P) {
+    const dist = Math.hypot(to.x - from.x, to.z - from.z);
+    const turn = Math.abs(to.yaw - from.yaw);
+    return THREE.MathUtils.clamp(0.35 + dist / 2.6 + turn * 0.3, 0.45, 4);
+  }
+
+  function startLeg(g: Glide) {
+    const target = g.legs[g.leg];
+    let dy = target.yaw - pose.yaw;
+    dy = Math.atan2(Math.sin(dy), Math.cos(dy));
+    g.from = { ...pose };
+    g.to = { ...target, yaw: pose.yaw + dy };
+    g.t = 0;
+    g.dur = legDuration(g.from, g.to);
+  }
+
+  function glideTo(to: P, then?: () => void) {
     const free = nearestFree(to.x, to.z);
     const target = { ...to, x: free.x, z: free.z };
     if (opts.reducedMotion) {
       Object.assign(pose, target);
+      glide = null;
       dirty = true;
       then?.();
       return;
     }
-    const dist = Math.hypot(target.x - pose.x, target.z - pose.z);
-    let dy = target.yaw - pose.yaw;
-    dy = Math.atan2(Math.sin(dy), Math.cos(dy));
-    glide = { from: { ...pose }, to: { ...target, yaw: pose.yaw + dy }, t: 0, dur: THREE.MathUtils.clamp(0.5 + dist * 0.22 + Math.abs(dy) * 0.25, 0.6, 3), then };
+    const pts = route(target.x, target.z);
+    const legs: P[] = pts.map((q, i) => {
+      if (i === pts.length - 1) return target;
+      // walk facing where we're going, eyes level
+      const prev = i ? pts[i - 1] : pose;
+      return { x: q.x, z: q.z, yaw: Math.atan2(-(q.x - prev.x), -(q.z - prev.z)), pitch: -0.05 };
+    });
+    const g: Glide = { legs, leg: 0, from: { ...pose }, to: target, t: 0, dur: 1, then };
+    startLeg(g);
+    glide = g;
   }
 
   /* --------------------------- controls --------------------------- */
@@ -790,16 +859,25 @@ export async function createTour(canvas: HTMLCanvasElement, opts: TourOptions): 
     // glides & guided tour
     if (glide) {
       glide.t += dt / glide.dur;
-      const k = easeInOut(Math.min(1, glide.t));
+      // one smooth walk across all legs: speed up on the first, ease off on the last
+      const u = Math.min(1, glide.t);
+      const first = glide.leg === 0;
+      const last = glide.leg === glide.legs.length - 1;
+      const k = first && last ? easeInOut(u) : first ? u * u * (2 - u) * 0.5 + u * 0.5 * u : last ? 1 - (1 - u) * (1 - u) : u;
       pose.x = THREE.MathUtils.lerp(glide.from.x, glide.to.x, k);
       pose.z = THREE.MathUtils.lerp(glide.from.z, glide.to.z, k);
       pose.yaw = THREE.MathUtils.lerp(glide.from.yaw, glide.to.yaw, k);
       pose.pitch = THREE.MathUtils.lerp(glide.from.pitch, glide.to.pitch, k);
       dirty = true;
       if (glide.t >= 1) {
-        const then = glide.then;
-        glide = null;
-        then?.();
+        if (glide.leg < glide.legs.length - 1) {
+          glide.leg++;
+          startLeg(glide);
+        } else {
+          const then = glide.then;
+          glide = null;
+          then?.();
+        }
       }
     } else if (auto) {
       autoHold -= dt;
@@ -807,10 +885,11 @@ export async function createTour(canvas: HTMLCanvasElement, opts: TourOptions): 
         const key = tourOrder[autoIdx % tourOrder.length];
         autoIdx++;
         opts.onAutoTour(true, key);
-        glideTo(viewpoints.get(key)!, () => {
-          autoHold = 3.2;
-        });
+        // wait for the walk to finish; set before glideTo because a reduced-motion jump finishes immediately
         autoHold = Infinity;
+        glideTo(viewpoints.get(key)!, () => {
+          autoHold = opts.reducedMotion ? 5 : 3.4;
+        });
       }
     }
 
