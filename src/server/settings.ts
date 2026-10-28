@@ -227,10 +227,21 @@ const DEFAULTS = {
 type SettingsMap = { store: StoreInfo; commerce: CommerceSettings; home: HomeContent; policies: PolicyPages };
 export type SettingKey = keyof SettingsMap;
 
+/** Merge a saved row over the defaults, repairing store hours that can't be shown. */
+function merged<K extends SettingKey>(key: K, saved: unknown): SettingsMap[K] {
+  const v = { ...DEFAULTS[key], ...((saved as object) ?? {}) } as SettingsMap[K];
+  if (key === "store") {
+    const s = v as StoreInfo;
+    // a saved week with no complete day (open AND close time) would read "Closed" every day
+    if (!Array.isArray(s.hours) || !s.hours.some((h) => h && h.open && h.close)) s.hours = DEFAULT_STORE.hours;
+  }
+  return v;
+}
+
 export async function getSetting<K extends SettingKey>(key: K, tx?: Tx): Promise<SettingsMap[K]> {
   if (!tx) await requestTime();
   const row = await (tx ?? db()).query.settings.findFirst({ where: eq(settings.key, key) });
-  return { ...DEFAULTS[key], ...((row?.value as object) ?? {}) } as SettingsMap[K];
+  return merged(key, row?.value);
 }
 
 export async function getSettings<K extends SettingKey>(keys: K[]): Promise<Pick<SettingsMap, K>> {
@@ -239,7 +250,7 @@ export async function getSettings<K extends SettingKey>(keys: K[]): Promise<Pick
   const out = {} as Pick<SettingsMap, K>;
   for (const k of keys) {
     const row = rows.find((r) => r.key === k);
-    (out as Record<string, unknown>)[k] = { ...DEFAULTS[k], ...((row?.value as object) ?? {}) };
+    (out as Record<string, unknown>)[k] = merged(k, row?.value);
   }
   return out;
 }

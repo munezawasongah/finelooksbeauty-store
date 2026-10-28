@@ -77,7 +77,9 @@ async function main() {
     const patch: Record<string, unknown> = {};
     if (!v.streetAddress) patch.streetAddress = DEFAULT_STORE.streetAddress;
     if (!v.zip) patch.zip = DEFAULT_STORE.zip;
-    if (!Array.isArray(v.hours) || !(v.hours as { open: string | null }[]).some((h) => h.open)) patch.hours = DEFAULT_STORE.hours;
+    if (!Array.isArray(v.hours) || !(v.hours as { open: string | null; close: string | null }[]).some((h) => h && h.open && h.close)) {
+      patch.hours = DEFAULT_STORE.hours;
+    }
     if (!v.streetAddress && (!v.mapEmbedQuery || v.mapEmbedQuery === "Fine Looks Hair and Beauty Store, Garner, NC")) patch.mapEmbedQuery = DEFAULT_STORE.mapEmbedQuery;
     if (Object.keys(patch).length) {
       await db().update(settings).set({ value: { ...v, ...patch }, updatedAt: new Date() }).where(eq(settings.key, "store"));

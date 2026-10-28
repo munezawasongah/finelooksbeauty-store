@@ -38,6 +38,9 @@ export async function saveStore(_: SetState, f: FormData): Promise<SetState> {
     };
   });
   const allBlank = hours.every((h) => !h.open && !h.close) && !DAYS.some((d) => f.get(`closed_${d}`) === "on");
+  const half = hours.find((h) => Boolean(h.open) !== Boolean(h.close));
+  if (half) return { ok: false, message: `${half.day}: enter both the opening and closing time, or tick Closed.` };
+  if (!allBlank && !hours.some((h) => h.open && h.close)) return { ok: false, message: "Enter opening and closing times for at least one day." };
   const before = await getSetting("store");
   const value: StoreInfo = {
     ...before,

@@ -17,6 +17,7 @@ import {
 import { ProductCard, ProductGridSkeleton } from "@/components/store/ProductCard";
 import { SectionHeading } from "@/components/store/SectionHeading";
 import { TourTeaser } from "@/components/store/TourTeaser";
+import { HeroSlideshow, type Slide } from "@/components/store/HeroSlideshow";
 import { StoreGallery } from "@/components/store/StoreGallery";
 import { STORE_PHOTOS } from "@/lib/store-photos";
 import { catalogStats, listCategories, searchProducts } from "@/server/catalog";
@@ -175,14 +176,14 @@ function Hero({ home, store }: { home: HomeContent; store: StoreInfo }) {
           ) : (
             <BrandComposition />
           )}
-          <div className="absolute -left-4 bottom-10 hidden rounded-2xl border border-line bg-white/95 p-4 shadow-[var(--shadow-lift)] backdrop-blur sm:block lg:-left-10">
+          <div className="absolute -left-4 bottom-40 z-10 hidden rounded-2xl border border-line bg-white/95 p-4 shadow-[var(--shadow-lift)] backdrop-blur sm:block lg:-left-10">
             <p className="flex items-center gap-2 text-xs font-bold tracking-[0.12em] text-iris-600 uppercase">
               <Store size={14} aria-hidden /> Order online
             </p>
             <p className="mt-1 font-display text-xl">Pick up in Garner</p>
             <p className="text-xs text-muted">{store.directionsNote || `${store.city}, ${store.state}`}</p>
           </div>
-          <div className="absolute -right-3 top-8 hidden rounded-2xl bg-ink px-4 py-3 text-white shadow-xl sm:block lg:-right-8">
+          <div className="absolute -right-3 top-8 z-10 hidden rounded-2xl bg-ink px-4 py-3 text-white shadow-xl sm:block lg:-right-8">
             <p className="text-[0.65rem] font-bold tracking-[0.16em] text-orchid-300 uppercase">Ships to</p>
             <p className="font-display text-2xl">All 50 states</p>
           </div>
@@ -192,20 +193,32 @@ function Hero({ home, store }: { home: HomeContent; store: StoreInfo }) {
   );
 }
 
+/** Photos from the Garner store, in the order they play in the hero. */
+const HERO_SLIDES: Slide[] = [
+  { src: "/store-photos/store-wig-wall.webp", alt: "The wig wall at Fine Looks Hair & Beauty in Garner", caption: "The wig wall" },
+  { src: "/store-photos/wig-goddess-locs.webp", alt: "Goddess locs wig on a display head", caption: "Goddess locs wig" },
+  { src: "/store-photos/store-braid-wall.webp", alt: "Braiding hair wall with pre-stretched braid packs", caption: "Braiding hair, every shade" },
+  { src: "/store-photos/wig-fake-scalp-body-wave.webp", alt: "Long body wave lace wig with a fake scalp part", caption: "Body wave lace wigs" },
+  { src: "/store-photos/locs-soft-36.webp", alt: "Fine Looks soft locs 36 inch packs in four shades", caption: "Fine Looks soft locs" },
+  { src: "/store-photos/store-braid-corner.webp", alt: "Colourful braiding hair and extensions under a row of display heads", caption: "Colours for every style" },
+  { src: "/store-photos/wig-copper-curly-headband.webp", alt: "Copper curly headband wig", caption: "Headband wigs" },
+  { src: "/store-photos/wig-straight-layered.webp", alt: "Layered straight wig with side bangs", caption: "Layered straight wigs" },
+  { src: "/store-photos/store-haircare-aisle.webp", alt: "Hair care aisle with sprays, oils and gels", caption: "The hair care aisle" },
+  { src: "/store-photos/wig-side-part-lace.webp", alt: "Jet black side-part lace front wig", caption: "Lace front wigs" },
+  { src: "/store-photos/wig-ombre-wavy-headband.webp", alt: "Ombré body wave headband wig", caption: "Ombré waves" },
+  { src: "/store-photos/store-sleep-caps.webp", alt: "Display of satin sleep caps and bonnets", caption: "Bonnets, caps & wraps" },
+  { src: "/store-photos/wig-burgundy-headband.webp", alt: "Burgundy ombré straight headband wig", caption: "Burgundy ombré" },
+  { src: "/store-photos/wig-curly-ombre-headband.webp", alt: "Curly ombré headband wig", caption: "Curly ombré" },
+];
+
 function BrandComposition() {
   return (
     <div className="relative aspect-[4/5] overflow-hidden rounded-[2rem] bg-gradient-to-br from-iris-600 via-iris-500 to-orchid-500 shadow-[var(--shadow-lift)]">
-      <div className="grain absolute inset-0 opacity-60" />
-      <div className="absolute -right-20 -top-20 h-80 w-80 rounded-full border-[28px] border-white/10" />
-      <div className="absolute -bottom-24 -left-16 h-96 w-96 rounded-full bg-orchid-300/30 blur-2xl" />
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="relative flex aspect-square w-[66%] items-center justify-center rounded-full bg-white shadow-2xl ring-[14px] ring-white/15">
-          <Image src="/brand/emblem.png" alt="" width={360} height={360} priority className="h-[82%] w-[82%]" />
-        </div>
-      </div>
-      <div className="absolute inset-x-6 top-6 flex max-w-[70%] flex-wrap gap-2">
+      <HeroSlideshow slides={HERO_SLIDES} />
+      <div className="pointer-events-none absolute inset-0 rounded-[2rem] ring-1 ring-white/15 ring-inset" />
+      <div className="pointer-events-none absolute inset-x-6 top-6 flex max-w-[70%] flex-wrap gap-2">
         {["Wigs", "Bundles", "Braiding hair", "Hair care", "Beauty"].map((t) => (
-          <span key={t} className="rounded-full bg-white/15 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur">
+          <span key={t} className="rounded-full bg-white/20 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur">
             {t}
           </span>
         ))}

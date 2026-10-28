@@ -3,8 +3,6 @@ import { Mail, MapPin, Phone } from "lucide-react";
 import type { StoreInfo } from "@/server/settings";
 import { Logo } from "./Logo";
 import { NewsletterForm } from "./NewsletterForm";
-import { OpenNow } from "./StoreHours";
-import { hoursLines } from "@/lib/hours";
 
 export function Footer({
   store,
@@ -89,19 +87,6 @@ export function Footer({
                   <Mail size={16} className="shrink-0 text-orchid-300" aria-hidden /> {store.email}
                 </a>
               </li>
-              {store.hours.some((h) => h.open) && (
-                <li className="space-y-2 pt-1">
-                  <OpenNow hours={store.hours} tone="dark" />
-                  <ul className="space-y-1 text-xs text-white/65">
-                    {hoursLines(store.hours).map((r) => (
-                      <li key={`${r.short}-${r.season ?? ""}`} className={r.current ? "" : "text-white/40"}>
-                        <span className="font-semibold text-white/85">{r.short}</span> {r.time}
-                        {r.season && <span> ({r.season === "winter" ? "Winter" : "Summer"})</span>}
-                      </li>
-                    ))}
-                  </ul>
-                </li>
-              )}
               <FooterLink href="/visit">Hours &amp; directions</FooterLink>
             </FooterCol>
           </div>

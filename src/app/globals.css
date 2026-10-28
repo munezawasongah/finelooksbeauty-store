@@ -58,6 +58,19 @@
     from { opacity: 0; transform: translateY(14px); }
     to { opacity: 1; transform: translateY(0); }
   }
+  /* slow zoom-and-drift for the hero photo slideshow */
+  @keyframes kenburns-a {
+    from { transform: scale(1.02) translate3d(0, 0, 0); }
+    to { transform: scale(1.14) translate3d(-2.5%, -2%, 0); }
+  }
+  @keyframes kenburns-b {
+    from { transform: scale(1.14) translate3d(2.5%, -1.5%, 0); }
+    to { transform: scale(1.02) translate3d(0, 0, 0); }
+  }
+  @keyframes slide-progress {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
+  }
 }
 
 @layer base {
