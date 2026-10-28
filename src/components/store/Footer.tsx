@@ -4,7 +4,7 @@ import type { StoreInfo } from "@/server/settings";
 import { Logo } from "./Logo";
 import { NewsletterForm } from "./NewsletterForm";
 import { OpenNow } from "./StoreHours";
-import { hoursSummary } from "@/lib/hours";
+import { hoursLines } from "@/lib/hours";
 
 export function Footer({
   store,
@@ -92,14 +92,14 @@ export function Footer({
               {store.hours.some((h) => h.open) && (
                 <li className="space-y-2 pt-1">
                   <OpenNow hours={store.hours} tone="dark" />
-                  <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-xs text-white/65">
-                    {hoursSummary(store.hours).map((r) => (
-                      <div key={r.days} className="contents">
-                        <dt className="font-semibold text-white/80">{r.days}</dt>
-                        <dd>{r.time}</dd>
-                      </div>
+                  <ul className="space-y-1 text-xs text-white/65">
+                    {hoursLines(store.hours).map((r) => (
+                      <li key={`${r.short}-${r.season ?? ""}`} className={r.current ? "" : "text-white/40"}>
+                        <span className="font-semibold text-white/85">{r.short}</span> {r.time}
+                        {r.season && <span> ({r.season === "winter" ? "Winter" : "Summer"})</span>}
+                      </li>
                     ))}
-                  </dl>
+                  </ul>
                 </li>
               )}
               <FooterLink href="/visit">Hours &amp; directions</FooterLink>

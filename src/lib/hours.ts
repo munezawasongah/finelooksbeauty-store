@@ -33,11 +33,11 @@ export function isSummerHours(date = new Date()) {
   return eastern(date).summer;
 }
 
-export function to12h(t: string | null | undefined) {
+export function to12h(t: string | null | undefined, full = false) {
   if (!t) return "";
   const [h, m] = t.split(":").map(Number);
   const suffix = h >= 12 ? "PM" : "AM";
-  return `${((h + 11) % 12) + 1}${m ? `:${String(m).padStart(2, "0")}` : ""} ${suffix}`;
+  return `${((h + 11) % 12) + 1}${m || full ? `:${String(m).padStart(2, "0")}` : ""} ${suffix}`;
 }
 
 function mins(t: string) {
@@ -76,18 +76,50 @@ export function openStatus(hours: DayHours[], now = new Date()): { open: boolean
   return { open: false, label: "Closed now" };
 }
 
-/** Compact lines for small spaces: "Sun–Thu 9:30 AM–7 PM", "Fri 9:30 AM–4:30 PM", "Sat Closed". */
-export function hoursSummary(hours: DayHours[], date = new Date()) {
-  const week = hoursFor(hours, date);
-  const label = (d: (typeof week)[number]) => (d.open && d.close ? `${to12h(d.open)}–${to12h(d.close)}` : "Closed");
-  const out: { days: string; time: string }[] = [];
+export type HoursLine = {
+  /** "Sunday – Thursday", "Friday", "Saturday" */
+  days: string;
+  /** Short form for tight spaces: "Sun – Thu" */
+  short: string;
+  /** "9:30 AM – 7:00 PM" or "Closed" */
+  time: string;
+  season?: "winter" | "summer";
+  /** True when this line's season is the one in force today. */
+  current: boolean;
+  /** Weekdays covered, for highlighting today. */
+  covers: string[];
+};
+
+/**
+ * Hours written the way the shop door shows them, Sunday first:
+ *   Sunday – Thursday   9:30 AM – 7:00 PM
+ *   Friday              9:30 AM – 4:30 PM (Winter hours)
+ *   Friday              9:30 AM – 7:00 PM (Summer hours)
+ *   Saturday            Closed
+ */
+export function hoursLines(hours: DayHours[], date = new Date()): HoursLine[] {
+  const summer = isSummerHours(date);
+  const byDay = WEEK.map((day) => hours.find((h) => h.day === day) ?? { day, open: null, close: null });
+  const key = (h: DayHours) => (h.open && h.close ? `${h.open}|${h.close}|${h.summerClose && h.summerClose !== h.close ? h.summerClose : ""}` : "closed");
+  const time = (open: string, close: string) => `${to12h(open, true)} – ${to12h(close, true)}`;
+  const lines: HoursLine[] = [];
   let start = 0;
-  for (let i = 1; i <= week.length; i++) {
-    if (i < week.length && label(week[i]) === label(week[start])) continue;
-    const a = week[start].day.slice(0, 3);
-    const b = week[i - 1].day.slice(0, 3);
-    out.push({ days: start === i - 1 ? a : `${a}–${b}`, time: label(week[start]) });
+  for (let i = 1; i <= byDay.length; i++) {
+    if (i < byDay.length && key(byDay[i]) === key(byDay[start])) continue;
+    const group = byDay.slice(start, i);
+    const first = group[0];
+    const days = group.length === 1 ? first.day : `${first.day} – ${group[group.length - 1].day}`;
+    const short = group.length === 1 ? first.day.slice(0, 3) : `${first.day.slice(0, 3)} – ${group[group.length - 1].day.slice(0, 3)}`;
+    const covers = group.map((g) => g.day);
+    if (!first.open || !first.close) {
+      lines.push({ days, short, time: "Closed", current: true, covers });
+    } else if (first.summerClose && first.summerClose !== first.close) {
+      lines.push({ days, short, time: time(first.open, first.close), season: "winter", current: !summer, covers });
+      lines.push({ days, short, time: time(first.open, first.summerClose), season: "summer", current: summer, covers });
+    } else {
+      lines.push({ days, short, time: time(first.open, first.close), current: true, covers });
+    }
     start = i;
   }
-  return out;
+  return lines;
 }

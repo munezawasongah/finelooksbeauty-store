@@ -37,7 +37,7 @@ export const STORE_PHOTOS: StorePhoto[] = [
   },
   {
     src: "/store-photos/store-haircare-aisle.webp",
-    tile: "tall",
+    tile: "big",
     alt: "Hair care aisle with sprays, oils and gels on white shelves and braiding hair stacked below",
     caption: "The hair care aisle",
     width: 960,
@@ -58,13 +58,5 @@ export const STORE_PHOTOS: StorePhoto[] = [
     caption: "Bonnets, caps & wraps",
     width: 960,
     height: 720,
-  },
-  {
-    src: "/store-photos/store-front-door.webp",
-    tile: "tall",
-    alt: "The Fine Looks Hair & Beauty Store front door with the logo, phone number and opening hours",
-    caption: "Find us at 106 Bratton Dr, Suite 5",
-    width: 720,
-    height: 960,
   },
 ];

@@ -1,4 +1,4 @@
-import { hoursFor, isSummerHours, openStatus, to12h, WEEK, type DayHours } from "@/lib/hours";
+import { hoursLines, openStatus, type DayHours } from "@/lib/hours";
 
 /** "Open now · closes 7 PM" pill. */
 export function OpenNow({ hours, tone = "light" }: { hours: DayHours[]; tone?: "light" | "dark" }) {
@@ -22,52 +22,44 @@ export function OpenNow({ hours, tone = "light" }: { hours: DayHours[]; tone?: "
   );
 }
 
-/** Weekly table, Sunday first, today highlighted, with the seasonal Friday note. */
+/**
+ * Opening hours as they read on the shop door:
+ * Sunday – Thursday, Friday (Winter hours), Friday (Summer hours), Saturday.
+ * Today's line is marked; the season not in force is shown softer.
+ */
 export function HoursTable({ hours, tone = "light" }: { hours: DayHours[]; tone?: "light" | "dark" }) {
   if (!hours.some((h) => h.open && h.close)) {
     return <p className={tone === "dark" ? "text-white/80" : "text-ink-soft"}>Call the store for today&apos;s hours.</p>;
   }
-  const week = hoursFor(hours);
+  const lines = hoursLines(hours);
   const today = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", weekday: "long" }).format(new Date());
-  const summer = isSummerHours();
-  const seasonal = hours.filter((h) => h.summerClose && h.open && h.close && h.summerClose !== h.close);
-  const muted = tone === "dark" ? "text-white/70" : "text-ink-soft";
+  const dark = tone === "dark";
   return (
-    <div>
-      <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-1">
-        {WEEK.map((day) => {
-          const d = week.find((w) => w.day === day)!;
-          const isToday = day === today;
-          return (
-            <div
-              key={day}
-              className={`contents ${isToday ? (tone === "dark" ? "font-bold text-white" : "font-bold text-ink") : ""}`}
-            >
-              <dt className={isToday ? "" : "font-semibold"}>
-                {day}
-                {isToday && (
-                  <span className={`ml-2 rounded-full px-1.5 py-px text-[0.6rem] tracking-wide uppercase ${tone === "dark" ? "bg-white/15" : "bg-iris-50 text-iris-700"}`}>
-                    Today
-                  </span>
-                )}
-              </dt>
-              <dd className={isToday ? "" : muted}>
-                {d.open && d.close ? `${to12h(d.open)} – ${to12h(d.close)}` : "Closed"}
-                {d.seasonal && <sup className="ml-0.5">*</sup>}
-              </dd>
-            </div>
-          );
-        })}
-      </dl>
-      {seasonal.length > 0 && (
-        <p className={`mt-3 text-xs ${muted}`}>
-          *{" "}
-          {seasonal
-            .map((h) => `${h.day}s: ${to12h(h.open)} – ${to12h(h.close)} in winter, until ${to12h(h.summerClose)} in summer`)
-            .join(". ")}
-          . {summer ? "Summer hours are on now." : "Winter hours are on now."}
-        </p>
-      )}
-    </div>
+    <ul className="space-y-1.5">
+      {lines.map((l) => {
+        const isToday = l.covers.includes(today) && l.current;
+        return (
+          <li
+            key={`${l.days}-${l.season ?? ""}`}
+            className={`flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5 ${
+              isToday ? (dark ? "font-bold text-white" : "font-bold text-ink") : !l.current ? (dark ? "text-white/55" : "text-muted") : ""
+            }`}
+          >
+            <span className={isToday ? "" : "font-semibold"}>
+              {l.days}
+              {isToday && (
+                <span className={`ml-2 rounded-full px-1.5 py-px align-middle text-[0.6rem] tracking-wide uppercase ${dark ? "bg-white/15" : "bg-iris-50 text-iris-700"}`}>
+                  Today
+                </span>
+              )}
+            </span>
+            <span className={isToday ? "" : dark ? "text-white/80" : "text-ink-soft"}>
+              {l.time}
+              {l.season && <span className="ml-1 text-[0.8em]">({l.season === "winter" ? "Winter hours" : "Summer hours"})</span>}
+            </span>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
