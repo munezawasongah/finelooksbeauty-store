@@ -1,5 +1,7 @@
 "use server";
 
+import { SOCIAL_PLATFORMS, normalizeSocial } from "@/lib/social";
+
 import { refresh } from "next/cache";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
@@ -44,14 +46,21 @@ export async function saveStore(_: SetState, f: FormData): Promise<SetState> {
     zip,
     directionsNote: str(f, "directionsNote", 120),
     hours: allBlank ? [] : hours,
-    instagram: str(f, "instagram", 200),
-    facebook: str(f, "facebook", 200),
-    tiktok: str(f, "tiktok", 200),
+    instagram: "",
+    facebook: "",
+    tiktok: "",
+    youtube: "",
     googleBusinessUrl: str(f, "googleBusinessUrl", 300),
     mapEmbedQuery: str(f, "mapEmbedQuery", 200) || before.mapEmbedQuery,
   };
-  for (const u of [value.instagram, value.facebook, value.tiktok, value.googleBusinessUrl]) {
-    if (u && !/^https:\/\//.test(u)) return { ok: false, message: "Social and Google links must start with https://" };
+  // social pages: accept a link or an @handle, store the platform's canonical page URL
+  for (const p of SOCIAL_PLATFORMS) {
+    const r = normalizeSocial(p.key, str(f, p.key, 300));
+    if (!r.ok) return { ok: false, message: r.message };
+    value[p.key] = r.url;
+  }
+  if (value.googleBusinessUrl && !/^https:\/\//.test(value.googleBusinessUrl)) {
+    return { ok: false, message: "The Google Business Profile link must start with https://" };
   }
   await saveSetting("store", value);
   await audit(ctx.actor, "settings.store", "settings", "store", { name: value.name, phone: value.phone, address: value.streetAddress });

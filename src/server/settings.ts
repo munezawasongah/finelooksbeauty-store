@@ -18,6 +18,7 @@ export type StoreInfo = {
   instagram: string;
   facebook: string;
   tiktok: string;
+  youtube: string;
   googleBusinessUrl: string;
   mapEmbedQuery: string;
 };
@@ -66,6 +67,7 @@ export const DEFAULT_STORE: StoreInfo = {
   instagram: "",
   facebook: "",
   tiktok: "",
+  youtube: "",
   googleBusinessUrl: "",
   mapEmbedQuery: "Fine Looks Hair and Beauty Store, Garner, NC",
 };

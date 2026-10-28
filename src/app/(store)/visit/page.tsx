@@ -5,6 +5,8 @@ import { PageHero } from "@/components/store/PageHero";
 import { JsonLd } from "@/components/store/JsonLd";
 import { getSettings, type StoreInfo } from "@/server/settings";
 import { localBusinessJsonLd, organizationJsonLd } from "@/lib/seo";
+import { socialLinks } from "@/lib/social";
+import { SocialIcon, SocialLinks } from "@/components/store/SocialLinks";
 
 export const metadata: Metadata = {
   title: "Visit our beauty supply store in Garner, NC",
@@ -81,6 +83,20 @@ async function Content() {
             </a>
           </p>
         </InfoCard>
+        {socialLinks(store).length > 0 && (
+          <section className="card p-6">
+            <div className="mb-4 flex items-center gap-4">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-mist text-iris-600">
+                <SocialIcon name="instagram" size={20} />
+              </span>
+              <div>
+                <h2 className="font-display text-xl">Follow us</h2>
+                <p className="text-sm text-ink-soft">New arrivals, installs and offers, first.</p>
+              </div>
+            </div>
+            <SocialLinks links={socialLinks(store)} variant="list" storeName={store.name} />
+          </section>
+        )}
       </div>
       <div className="relative min-h-[24rem] overflow-hidden rounded-[var(--radius-card)] border border-line bg-mist">
         <iframe

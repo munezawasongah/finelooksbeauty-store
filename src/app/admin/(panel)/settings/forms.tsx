@@ -1,5 +1,6 @@
 "use client";
 
+import { SOCIAL_PLATFORMS } from "@/lib/social";
 import { useActionState, useState } from "react";
 import type { CommerceSettings, HomeContent, PolicyPages, StoreInfo } from "@/server/settings";
 import { saveCommerce, saveHome, savePolicies, saveShipping, saveStore, type SetState } from "./actions";
@@ -64,11 +65,20 @@ export function StoreForm({ store }: { store: StoreInfo }) {
         </div>
       </fieldset>
       <div className="grid gap-4 md:grid-cols-2">
-        <T label="Instagram URL" name="instagram" value={store.instagram} placeholder="https://instagram.com/…" />
-        <T label="Facebook URL" name="facebook" value={store.facebook} />
-        <T label="TikTok URL" name="tiktok" value={store.tiktok} />
-        <T label="Google Business Profile URL" name="googleBusinessUrl" value={store.googleBusinessUrl} />
       </div>
+      <fieldset className="space-y-3">
+        <legend className="label">Social media pages</legend>
+        <p className="text-xs text-muted">
+          Paste the store&apos;s page link or just its @handle. Icons appear in the footer, the mobile menu and the Visit page; on phones they open
+          straight in the Facebook, Instagram, YouTube or TikTok app. Leave a box empty to hide that icon.
+        </p>
+        <div className="grid gap-4 md:grid-cols-2">
+          {SOCIAL_PLATFORMS.map((p) => (
+            <T key={p.key} label={p.label} name={p.key} value={store[p.key]} placeholder={p.example} autoComplete="off" spellCheck={false} />
+          ))}
+        </div>
+      </fieldset>
+      <T label="Google Business Profile URL" name="googleBusinessUrl" value={store.googleBusinessUrl} />
       <Save pending={pending} state={state} />
     </form>
   );

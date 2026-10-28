@@ -5,6 +5,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Menu, Search, ShoppingBag, User, X, MapPin } from "lucide-react";
 import { Logo } from "./Logo";
+import { SocialLinks } from "./SocialLinks";
+import type { SocialLink } from "@/lib/social";
 
 export type NavCategory = { slug: string; name: string };
 
@@ -12,10 +14,14 @@ export function HeaderClient({
   categories,
   cartCount,
   signedIn,
+  social = [],
+  storeName,
 }: {
   categories: NavCategory[];
   cartCount: number;
   signedIn: boolean;
+  social?: SocialLink[];
+  storeName?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -227,6 +233,12 @@ export function HeaderClient({
               <ShoppingBag size={16} aria-hidden /> Track an order
             </Link>
           </div>
+          {social.length > 0 && open && (
+            <div className="mt-8 border-t border-line pt-6">
+              <p className="mb-3 text-[0.7rem] font-bold tracking-[0.2em] text-iris-600 uppercase">Follow us</p>
+              <SocialLinks links={social} variant="light" storeName={storeName} />
+            </div>
+          )}
         </nav>
       </div>
     </div>

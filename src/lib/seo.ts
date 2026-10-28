@@ -18,7 +18,7 @@ const DAY_MAP: Record<string, string> = {
 };
 
 export function localBusinessJsonLd(store: StoreInfo) {
-  const sameAs = [store.instagram, store.facebook, store.tiktok, store.googleBusinessUrl].filter(Boolean);
+  const sameAs = [store.facebook, store.instagram, store.youtube, store.tiktok, store.googleBusinessUrl].filter(Boolean);
   return {
     "@context": "https://schema.org",
     "@type": "Store",

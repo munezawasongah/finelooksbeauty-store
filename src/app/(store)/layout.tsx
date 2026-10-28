@@ -6,6 +6,7 @@ import { listCategories } from "@/server/catalog";
 import { cartCount } from "@/server/cart";
 import { getCustomer } from "@/server/auth/session";
 import { DEFAULT_COMMERCE, getSettings } from "@/server/settings";
+import { socialLinks } from "@/lib/social";
 
 async function Announcement() {
   const { commerce } = await getSettings(["commerce"]);
@@ -22,9 +23,9 @@ function AnnouncementBar({ text }: { text: string }) {
 }
 
 async function Header() {
-  const [cats, count, customer] = await Promise.all([listCategories(), cartCount(), getCustomer()]);
+  const [cats, count, customer, { store }] = await Promise.all([listCategories(), cartCount(), getCustomer(), getSettings(["store"])]);
   const top = cats.filter((c) => !c.parentId).map((c) => ({ slug: c.slug, name: c.name }));
-  return <HeaderClient categories={top} cartCount={count} signedIn={Boolean(customer)} />;
+  return <HeaderClient categories={top} cartCount={count} signedIn={Boolean(customer)} social={socialLinks(store)} storeName={store.name} />;
 }
 
 async function SiteFooter() {
