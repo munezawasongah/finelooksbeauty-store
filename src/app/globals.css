@@ -1,26 +1,236 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/*
+ * Fine Looks Hair & Beauty — brand system
+ * Colours sampled from the client's logo:
+ *   iris   #5238DE  (ring, leaves, tagline)
+ *   orchid #B84AF6  (silhouette, name)
+ */
+@theme {
+  --color-iris-50: #f3f1fd;
+  --color-iris-100: #e7e2fb;
+  --color-iris-200: #cfc5f7;
+  --color-iris-300: #ab9cf0;
+  --color-iris-400: #8a74e8;
+  --color-iris-500: #6a52e2;
+  --color-iris-600: #5238de;
+  --color-iris-700: #432bbd;
+  --color-iris-800: #36248f;
+  --color-iris-900: #2a1d5c;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --color-orchid-50: #fbf3ff;
+  --color-orchid-100: #f5e3fe;
+  --color-orchid-200: #ebc8fd;
+  --color-orchid-300: #dda0fb;
+  --color-orchid-400: #ca72f8;
+  --color-orchid-500: #b84af6;
+  --color-orchid-600: #9d32d9;
+  --color-orchid-700: #8027b2;
+  --color-orchid-800: #65208a;
+  --color-orchid-900: #4b1867;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  --color-ink: #1e1433;
+  --color-ink-soft: #4a4060;
+  --color-muted: #6b6280;
+  --color-line: #e8e1f6;
+  --color-mist: #f6f2fd;
+  --color-cream: #fbf9ff;
+  --color-success: #16794c;
+  --color-warning: #a35a00;
+  --color-danger: #b42318;
+
+  --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-fraunces), ui-serif, Georgia, serif;
+  --font-script: var(--font-dancing), cursive;
+
+  --radius-card: 1.25rem;
+  --shadow-soft: 0 1px 2px rgb(30 20 51 / 0.04), 0 8px 24px -12px rgb(30 20 51 / 0.12);
+  --shadow-lift: 0 2px 4px rgb(30 20 51 / 0.05), 0 22px 48px -20px rgb(82 56 222 / 0.35);
+
+  --animate-marquee: marquee 48s linear infinite;
+  --animate-fade-up: fade-up 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+  body {
+    background: #fff;
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-feature-settings: "ss01", "cv11";
+    text-rendering: optimizeLegibility;
+  }
+  ::selection {
+    background: var(--color-orchid-200);
+    color: var(--color-ink);
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-iris-600);
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+  h1, h2, h3, .font-display {
+    font-family: var(--font-display);
+    font-optical-sizing: auto;
+    letter-spacing: -0.02em;
+  }
+  em.accent, .accent {
+    font-style: italic;
+    color: var(--color-orchid-500);
+    font-weight: 400;
+  }
+  input, select, textarea, button {
+    font: inherit;
+  }
+}
+
+@layer components {
+  .container-x {
+    width: 100%;
+    max-width: 82rem;
+    margin-inline: auto;
+    padding-inline: 1rem;
+  }
+  @media (min-width: 640px) {
+    .container-x { padding-inline: 1.5rem; }
+  }
+  @media (min-width: 1024px) {
+    .container-x { padding-inline: 2.5rem; }
+  }
+
+  .eyebrow {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--color-iris-600);
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 999px;
+    padding: 0.85rem 1.5rem;
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    transition: background-color 0.2s, color 0.2s, box-shadow 0.2s, transform 0.2s, border-color 0.2s;
+    white-space: nowrap;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn:disabled, .btn[aria-disabled="true"] { opacity: 0.5; pointer-events: none; }
+  .btn-primary {
+    background: var(--color-iris-600);
+    color: #fff;
+    box-shadow: 0 10px 24px -12px rgb(82 56 222 / 0.7);
+  }
+  .btn-primary:hover { background: var(--color-iris-700); }
+  .btn-orchid {
+    background: var(--color-orchid-500);
+    color: #fff;
+    box-shadow: 0 10px 24px -12px rgb(184 74 246 / 0.7);
+  }
+  .btn-orchid:hover { background: var(--color-orchid-600); }
+  .btn-dark { background: var(--color-ink); color: #fff; }
+  .btn-dark:hover { background: #000; }
+  .btn-outline {
+    border: 1.5px solid var(--color-ink);
+    color: var(--color-ink);
+    background: transparent;
+  }
+  .btn-outline:hover { background: var(--color-ink); color: #fff; }
+  .btn-ghost { color: var(--color-ink); }
+  .btn-ghost:hover { background: var(--color-mist); }
+  .btn-sm { padding: 0.55rem 1rem; font-size: 0.8rem; }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    border-radius: 999px;
+    padding: 0.28rem 0.7rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .field {
+    display: block;
+    width: 100%;
+    border-radius: 0.85rem;
+    border: 1.5px solid var(--color-line);
+    background: #fff;
+    padding: 0.75rem 0.95rem;
+    font-size: 0.95rem;
+    color: var(--color-ink);
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .field:hover { border-color: var(--color-iris-200); }
+  .field:focus {
+    outline: none;
+    border-color: var(--color-iris-500);
+    box-shadow: 0 0 0 4px rgb(82 56 222 / 0.12);
+  }
+  .field[aria-invalid="true"] { border-color: var(--color-danger); }
+  .label {
+    display: block;
+    margin-bottom: 0.4rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--color-ink-soft);
+  }
+
+  .card {
+    background: #fff;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .link-underline {
+    background-image: linear-gradient(currentColor, currentColor);
+    background-size: 0% 1.5px;
+    background-repeat: no-repeat;
+    background-position: 0 100%;
+    transition: background-size 0.3s;
+  }
+  .link-underline:hover { background-size: 100% 1.5px; }
+
+  .prose-store p { margin: 0 0 1rem; line-height: 1.75; color: var(--color-ink-soft); }
+  .prose-store h2 { font-size: 1.6rem; margin: 2.2rem 0 0.8rem; }
+  .prose-store h3 { font-size: 1.2rem; margin: 1.6rem 0 0.6rem; }
+  .prose-store ul { list-style: disc; padding-left: 1.25rem; margin: 0 0 1rem; color: var(--color-ink-soft); line-height: 1.75; }
+  .prose-store a { color: var(--color-iris-600); text-decoration: underline; text-underline-offset: 3px; }
+
+  .no-scrollbar { scrollbar-width: none; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+
+  .grain {
+    background-image: radial-gradient(rgb(255 255 255 / 0.08) 1px, transparent 1px);
+    background-size: 3px 3px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
