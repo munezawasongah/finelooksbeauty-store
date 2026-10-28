@@ -115,3 +115,22 @@ export function socialLinks(store: Partial<Record<SocialKey, string>>): SocialLi
     handle: socialHandle(store[p.key]!),
   }));
 }
+
+/** Where an icon goes before the store's page link has been entered: a search for the store on that platform. */
+const SEARCH: Record<SocialKey, (q: string) => string> = {
+  facebook: (q) => `https://www.facebook.com/search/pages/?q=${q}`,
+  instagram: (q) => `https://www.instagram.com/explore/search/keyword/?q=${q}`,
+  youtube: (q) => `https://www.youtube.com/results?search_query=${q}`,
+  tiktok: (q) => `https://www.tiktok.com/search/user?q=${q}`,
+};
+
+/** All four platforms, always: the store's page when set, otherwise a search for the store. */
+export function socialLinksAll(store: Partial<Record<SocialKey, string>> & { legalName?: string; name?: string }): SocialLink[] {
+  const q = encodeURIComponent(store.legalName || store.name || "Fine Looks Hair and Beauty Store");
+  return SOCIAL_PLATFORMS.map((p) => {
+    const url = store[p.key];
+    return url
+      ? { key: p.key, label: p.label, href: url, handle: socialHandle(url) }
+      : { key: p.key, label: p.label, href: SEARCH[p.key](q), handle: "" };
+  });
+}

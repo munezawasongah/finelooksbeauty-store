@@ -3,8 +3,6 @@ import { Mail, MapPin, Phone } from "lucide-react";
 import type { StoreInfo } from "@/server/settings";
 import { Logo } from "./Logo";
 import { NewsletterForm } from "./NewsletterForm";
-import { SocialLinks } from "./SocialLinks";
-import { socialLinks } from "@/lib/social";
 
 export function Footer({
   store,
@@ -16,7 +14,6 @@ export function Footer({
   year: number;
 }) {
   const tel = store.phone.replace(/\D/g, "");
-  const social = socialLinks(store);
 
   return (
     <footer className="mt-auto bg-ink text-white">
@@ -40,12 +37,6 @@ export function Footer({
             <div className="mt-6 max-w-md">
               <NewsletterForm />
             </div>
-            {social.length > 0 && (
-              <div className="mt-8">
-                <h2 className="mb-3 font-sans text-[0.7rem] font-bold tracking-[0.2em] text-orchid-300 uppercase">Follow us</h2>
-                <SocialLinks links={social} storeName={store.name} />
-              </div>
-            )}
           </div>
 
           <div className="grid grid-cols-2 gap-8 sm:grid-cols-3">

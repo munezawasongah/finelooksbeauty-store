@@ -21,6 +21,8 @@ import { catalogStats, listCategories, searchProducts } from "@/server/catalog";
 import { DEFAULT_HOME, DEFAULT_STORE, getSettings, type HomeContent, type StoreInfo } from "@/server/settings";
 import { JsonLd } from "@/components/store/JsonLd";
 import { localBusinessJsonLd } from "@/lib/seo";
+import { socialLinksAll } from "@/lib/social";
+import { SocialIcon } from "@/components/store/SocialLinks";
 
 export default function HomePage() {
   return (
@@ -95,6 +97,10 @@ export default function HomePage() {
 
       <Suspense fallback={null}>
         <VisitBandData />
+      </Suspense>
+
+      <Suspense fallback={<SocialBand store={DEFAULT_STORE} />}>
+        <SocialBandData />
       </Suspense>
     </>
   );
@@ -575,6 +581,57 @@ async function VisitBandData() {
         </div>
       </div>
       <JsonLd data={localBusinessJsonLd(store)} />
+    </section>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Social media — the last thing before the footer                     */
+/* ------------------------------------------------------------------ */
+
+async function SocialBandData() {
+  const { store } = await getSettings(["store"]);
+  return <SocialBand store={store} />;
+}
+
+const SOCIAL_COLORS: Record<string, string> = {
+  facebook: "hover:bg-[#1877f2] hover:border-[#1877f2]",
+  instagram: "hover:bg-gradient-to-tr hover:from-[#f58529] hover:via-[#dd2a7b] hover:to-[#8134af] hover:border-[#dd2a7b]",
+  youtube: "hover:bg-[#ff0000] hover:border-[#ff0000]",
+  tiktok: "hover:bg-ink hover:border-ink",
+};
+
+function SocialBand({ store }: { store: StoreInfo }) {
+  const links = socialLinksAll(store);
+  return (
+    <section aria-labelledby="social-heading" className="border-t border-line bg-cream py-14 sm:py-16">
+      <div className="container-x flex flex-col items-center text-center">
+        <p className="eyebrow">Follow us</p>
+        <h2 id="social-heading" className="mt-3 text-[1.9rem] leading-[1.1] font-light text-ink sm:text-4xl">
+          Stay in the loop, <em className="accent">sister.</em>
+        </h2>
+        <p className="mt-3 max-w-md text-ink-soft">New arrivals, installs, tutorials and offers, first on our socials.</p>
+        <ul className="mt-8 flex flex-wrap justify-center gap-4 sm:gap-6">
+          {links.map((l) => (
+            <li key={l.key}>
+              <a
+                href={l.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`${store.name} on ${l.label} (opens in a new tab)`}
+                className="group flex flex-col items-center gap-2"
+              >
+                <span
+                  className={`flex h-16 w-16 items-center justify-center rounded-full border-[1.5px] border-iris-200 bg-white text-iris-700 shadow-[var(--shadow-soft)] transition-all duration-200 group-hover:-translate-y-1 group-hover:text-white sm:h-[4.5rem] sm:w-[4.5rem] ${SOCIAL_COLORS[l.key]}`}
+                >
+                  <SocialIcon name={l.key} size={26} />
+                </span>
+                <span className="text-xs font-bold tracking-[0.08em] text-ink-soft uppercase group-hover:text-ink">{l.label}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
     </section>
   );
 }
