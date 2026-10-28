@@ -18,6 +18,11 @@ try {
   } else {
     await run("npx", ["tsx", "scripts/migrate.ts"]);
     await run("npx", ["tsx", "scripts/seed.ts"]);
+    // Staging only: SEED_DEMO=1 loads the demo catalog (skips products that already exist).
+    if (process.env.SEED_DEMO === "1") {
+      process.env.ALLOW_DEMO_SEED = "1";
+      await run("npx", ["tsx", "scripts/seed-demo.ts"]);
+    }
     await run("npx", ["next", "start", "-p", process.env.PORT ?? "3000"]);
   }
 } catch (err) {
