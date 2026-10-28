@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { ProductCard, ProductGridSkeleton } from "@/components/store/ProductCard";
 import { SectionHeading } from "@/components/store/SectionHeading";
+import { TourTeaser } from "@/components/store/TourTeaser";
 import { catalogStats, listCategories, searchProducts } from "@/server/catalog";
 import { DEFAULT_HOME, DEFAULT_STORE, getSettings, type HomeContent, type StoreInfo } from "@/server/settings";
 import { JsonLd } from "@/components/store/JsonLd";
@@ -41,6 +42,8 @@ export default function HomePage() {
           <Categories />
         </Suspense>
       </section>
+
+      <TourTeaser />
 
       <section aria-labelledby="best-heading" className="bg-cream py-20 sm:py-28">
         <div className="container-x">

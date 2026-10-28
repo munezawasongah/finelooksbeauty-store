@@ -18,6 +18,7 @@ export const RESERVED_SLUGS = new Set([
   "orders",
   "track",
   "visit",
+  "tour",
   "policies",
   "accessibility",
   "media",

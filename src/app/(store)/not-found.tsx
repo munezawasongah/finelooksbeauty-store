@@ -3,6 +3,7 @@ import Link from "next/link";
 export default function NotFound() {
   return (
     <div className="container-x py-24 text-center">
+      <title>Page not found | Fine Looks Hair &amp; Beauty</title>
       <p className="eyebrow">404</p>
       <h1 className="mt-3 text-5xl font-light sm:text-6xl">
         This page has <em className="accent">moved on.</em>

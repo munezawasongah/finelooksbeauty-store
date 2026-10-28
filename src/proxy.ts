@@ -6,6 +6,8 @@ const isProd = process.env.NODE_ENV === "production";
 const STAFF_COOKIE = isProd ? "__Host-fl_staff" : "fl_staff";
 const PUBLIC_ADMIN = ["/admin/login", "/admin/setup", "/admin/invite", "/admin/mfa", "/admin/recovery-codes"];
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+/** Temporary platform hostnames (staging/preview) are never indexed; the real domain is. */
+const STAGING_HOST = /\.(up\.railway\.app|railway\.app|vercel\.app)$/i;
 
 /**
  * Runs before routes render:
@@ -17,6 +19,13 @@ const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
  *    renamed or moved products/categories return a permanent redirect.
  */
 export async function proxy(req: NextRequest) {
+  const res = await route(req);
+  const host = (req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? req.nextUrl.hostname).split(":")[0];
+  if (STAGING_HOST.test(host)) res.headers.set("X-Robots-Tag", "noindex, nofollow");
+  return res;
+}
+
+async function route(req: NextRequest): Promise<NextResponse> {
   if (req.method === "POST" && req.headers.has("next-action")) {
     const origin = req.headers.get("origin");
     if (!origin) return new NextResponse("Missing Origin", { status: 403 });
