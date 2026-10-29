@@ -35,7 +35,7 @@ async function SiteFooter() {
 
 export default function StoreLayout({ children }: LayoutProps<"/">) {
   return (
-    <>
+    <div className="theme-scope flex flex-1 flex-col">
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-full focus:bg-ink focus:px-4 focus:py-2 focus:text-white"
@@ -54,6 +54,6 @@ export default function StoreLayout({ children }: LayoutProps<"/">) {
       <Suspense fallback={<footer className="mt-auto min-h-[36rem] bg-ink" aria-hidden />}>
         <SiteFooter />
       </Suspense>
-    </>
+    </div>
   );
 }

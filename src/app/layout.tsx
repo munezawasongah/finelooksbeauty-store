@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import { THEME_BOOT_SCRIPT } from "@/lib/theme";
 
 const fraunces = localFont({
   src: [
@@ -53,7 +54,15 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en-US" className={`${fraunces.variable} ${manrope.variable} ${dancing.variable} h-full antialiased`}>
+    <html
+      lang="en-US"
+      className={`${fraunces.variable} ${manrope.variable} ${dancing.variable} h-full antialiased`}
+      suppressHydrationWarning
+    >
+      <head>
+        {/* sets the saved light/dark mode before first paint */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
+      </head>
       <body className="min-h-full flex flex-col bg-white text-ink">{children}</body>
     </html>
   );

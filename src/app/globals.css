@@ -239,6 +239,98 @@
   }
 }
 
+/*
+ * Dark mode for the storefront.
+ * The <html> element gets `dark` from the header toggle (saved in localStorage, otherwise the
+ * visitor's system setting). Rules only apply inside `.theme-scope` (the storefront layout),
+ * so the admin panel always stays light. The purple/ink bands, photos and 3D tour keep their
+ * own colours; light surfaces, text and tints are swapped for dark equivalents.
+ */
+html.dark:has(.theme-scope) {
+  color-scheme: dark;
+  background: #120d1f;
+}
+html.dark:has(.theme-scope) body {
+  background: #120d1f;
+  color: #f2eefb;
+}
+.dark .theme-scope {
+  --surface: #120d1f;
+  --surface-raised: #1b1530;
+  --text-strong: #f2eefb;
+  --color-ink-soft: #cdc4e0;
+  --color-muted: #a49bb9;
+  --color-line: #30274a;
+  --color-mist: #211a38;
+  --color-cream: #17112a;
+  --color-iris-50: #211b45;
+  --color-iris-100: #2b2257;
+  --color-orchid-50: #28173a;
+  --color-orchid-100: #35204d;
+  --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px -12px rgb(0 0 0 / 0.6);
+  --shadow-lift: 0 2px 4px rgb(0 0 0 / 0.3), 0 22px 48px -20px rgb(0 0 0 / 0.7);
+  background: var(--surface);
+  color: var(--text-strong);
+}
+
+/* surfaces */
+.dark .theme-scope .bg-white,
+.dark .theme-scope .card,
+.dark .theme-scope .field { background-color: var(--surface-raised); }
+.dark .theme-scope .bg-white\/95,
+.dark .theme-scope .bg-white\/90 { background-color: rgb(27 21 48 / 0.9); }
+.dark .theme-scope .bg-white\/85,
+.dark .theme-scope .bg-white\/80 { background-color: rgb(27 21 48 / 0.82); }
+.dark .theme-scope header.bg-white\/90 { background-color: rgb(18 13 31 / 0.88); }
+.dark .theme-scope .hover\:bg-white:hover { background-color: #2a2245; }
+.dark .theme-scope .bg-orchid-200 { background-color: #4a2a66; }
+.dark .theme-scope .bg-red-50,
+.dark .theme-scope .bg-rose-50 { background-color: rgb(244 63 94 / 0.14); }
+.dark .theme-scope .bg-green-50,
+.dark .theme-scope .bg-emerald-50 { background-color: rgb(16 185 129 / 0.14); }
+.dark .theme-scope .bg-amber-50 { background-color: rgb(245 158 11 / 0.14); }
+.dark .theme-scope .border-iris-200 { border-color: #3d3270; }
+.dark .theme-scope .border-iris-300 { border-color: #4a3d8a; }
+.dark .theme-scope .border-ink,
+.dark .theme-scope .border-white { border-color: var(--color-line); }
+.dark .theme-scope .ring-rose-200 { --tw-ring-color: rgb(244 63 94 / 0.35); }
+.dark .theme-scope .ring-emerald-200 { --tw-ring-color: rgb(16 185 129 / 0.35); }
+
+/* text */
+.dark .theme-scope .text-ink,
+.dark .theme-scope .hover\:text-ink:hover,
+.dark .theme-scope .group:hover .group-hover\:text-ink { color: var(--text-strong); }
+.dark .theme-scope .text-iris-600,
+.dark .theme-scope .hover\:text-iris-600:hover,
+.dark .theme-scope .eyebrow { color: #a898f6; }
+.dark .theme-scope .text-iris-700,
+.dark .theme-scope .hover\:text-iris-700:hover { color: #bcb0f8; }
+.dark .theme-scope .text-iris-800,
+.dark .theme-scope .hover\:text-iris-800:hover { color: #d3cbfb; }
+.dark .theme-scope .text-orchid-600,
+.dark .theme-scope .text-orchid-700 { color: #dcaafb; }
+.dark .theme-scope .text-orchid-100 { color: #f5e3fe; }
+.dark .theme-scope .text-rose-800 { color: #fda4af; }
+.dark .theme-scope .text-emerald-800 { color: #6ee7b7; }
+.dark .theme-scope .text-danger { color: #f87171; }
+.dark .theme-scope .text-success { color: #4ade80; }
+.dark .theme-scope .text-warning { color: #fbbf24; }
+.dark .theme-scope .prose-store a { color: #bcb0f8; }
+.dark .theme-scope .field { color: var(--text-strong); }
+.dark .theme-scope .field::placeholder { color: var(--color-muted); }
+
+/* buttons */
+.dark .theme-scope .btn-outline { border-color: var(--text-strong); color: var(--text-strong); }
+.dark .theme-scope .btn-outline:hover { background: var(--text-strong); color: #120d1f; }
+.dark .theme-scope .btn-ghost { color: var(--text-strong); }
+.dark .theme-scope .btn-dark { background: #f2eefb; color: #120d1f; }
+.dark .theme-scope .btn-dark:hover { background: #fff; }
+
+/* header toggle: show the icon for the mode you would switch to */
+.theme-icon-sun { display: none; }
+.dark .theme-icon-sun { display: block; }
+.dark .theme-icon-moon { display: none; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

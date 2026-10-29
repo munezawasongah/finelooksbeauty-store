@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Menu, Search, ShoppingBag, User } from "lucide-react";
+import { Menu, Moon, Search, ShoppingBag, Sun, User } from "lucide-react";
 import { Logo } from "./Logo";
 
 /** Static stand-in for the header while live data (nav, cart count) streams in. Same size, no hooks. */
@@ -22,6 +22,10 @@ export function HeaderStatic() {
           <Link href="/shop" aria-label="Search" className="flex h-11 w-11 items-center justify-center">
             <Search size={20} aria-hidden />
           </Link>
+          <span className="flex h-11 w-11 items-center justify-center" aria-hidden>
+            <Moon size={20} className="theme-icon-moon" />
+            <Sun size={20} className="theme-icon-sun" />
+          </span>
           <Link href="/account" aria-label="Account" className="hidden h-11 w-11 items-center justify-center sm:flex">
             <User size={20} aria-hidden />
           </Link>

@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { Menu, Search, ShoppingBag, User, X, MapPin } from "lucide-react";
 import { Logo } from "./Logo";
 import { SocialLinks } from "./SocialLinks";
+import { ThemeToggle } from "./ThemeToggle";
 import type { SocialLink } from "@/lib/social";
 
 export type NavCategory = { slug: string; name: string };
@@ -118,6 +119,7 @@ export function HeaderClient({
           >
             <Search size={20} aria-hidden />
           </button>
+          <ThemeToggle className="flex h-11 w-11 items-center justify-center rounded-full hover:bg-mist" />
           <Link
             href={signedIn ? "/account" : "/account/login"}
             aria-label={signedIn ? "Your account" : "Sign in"}
@@ -232,6 +234,7 @@ export function HeaderClient({
             <Link href="/track" tabIndex={open ? 0 : -1} className="flex items-center gap-2 py-2 text-ink-soft">
               <ShoppingBag size={16} aria-hidden /> Track an order
             </Link>
+            <ThemeToggle withLabel tabIndex={open ? 0 : -1} className="flex items-center gap-2 py-2 text-ink-soft" />
           </div>
           {social.length > 0 && open && (
             <div className="mt-8 border-t border-line pt-6">
