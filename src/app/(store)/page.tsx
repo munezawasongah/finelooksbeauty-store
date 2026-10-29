@@ -24,6 +24,7 @@ import { catalogStats, listCategories, searchProducts } from "@/server/catalog";
 import { DEFAULT_HOME, DEFAULT_STORE, getSettings, type HomeContent, type StoreInfo } from "@/server/settings";
 import { JsonLd } from "@/components/store/JsonLd";
 import { localBusinessJsonLd } from "@/lib/seo";
+import { storeMap } from "@/lib/maps";
 import { socialLinksAll } from "@/lib/social";
 import { SocialIcon } from "@/components/store/SocialLinks";
 import { HoursTable, OpenNow } from "@/components/store/StoreHours";
@@ -578,7 +579,7 @@ async function VisitBandData() {
   const { store } = await getSettings(["store"]);
   const tel = store.phone.replace(/\D/g, "");
   const address = [store.streetAddress, `${store.city}, ${store.state} ${store.zip}`.trim()].filter(Boolean).join(", ");
-  const mapsQuery = encodeURIComponent(store.streetAddress ? `${store.legalName}, ${address}` : store.mapEmbedQuery);
+  const map = storeMap(store);
   return (
     <section aria-labelledby="visit-heading" className="container-x pb-20 sm:pb-28">
       <div className="relative grid overflow-hidden rounded-[2rem] bg-gradient-to-br from-orchid-500 via-orchid-600 to-iris-700 text-white lg:grid-cols-[1.05fr_1fr]">
@@ -610,7 +611,7 @@ async function VisitBandData() {
           </div>
           <div className="mt-7 flex flex-wrap gap-3">
             <a
-              href={`https://www.google.com/maps/dir/?api=1&destination=${mapsQuery}`}
+              href={map.directionsHref}
               target="_blank"
               rel="noopener noreferrer"
               className="btn bg-white text-iris-700 hover:bg-orchid-50"
@@ -625,7 +626,7 @@ async function VisitBandData() {
         <div className="relative min-h-[20rem] bg-white/10 lg:min-h-full">
           <iframe
             title={`Map showing ${store.name} at ${address}`}
-            src={`https://www.google.com/maps?q=${mapsQuery}&z=16&output=embed`}
+            src={map.embedSrc}
             className="absolute inset-0 h-full w-full border-0"
             loading="lazy"
             referrerPolicy="no-referrer-when-downgrade"

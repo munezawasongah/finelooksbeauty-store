@@ -4,6 +4,7 @@ import { Clock, Mail, MapPin, Navigation, Phone } from "lucide-react";
 import { PageHero } from "@/components/store/PageHero";
 import { JsonLd } from "@/components/store/JsonLd";
 import { getSettings } from "@/server/settings";
+import { storeMap } from "@/lib/maps";
 import { HoursTable, OpenNow } from "@/components/store/StoreHours";
 import { StoreGallery } from "@/components/store/StoreGallery";
 import { STORE_PHOTOS } from "@/lib/store-photos";
@@ -37,8 +38,7 @@ export default function VisitPage() {
 
 async function Content() {
   const { store } = await getSettings(["store"]);
-  const address = [store.streetAddress, `${store.city}, ${store.state} ${store.zip}`.trim()].filter(Boolean).join(", ");
-  const mapsQuery = encodeURIComponent(store.streetAddress ? `${store.legalName}, ${address}` : store.mapEmbedQuery);
+  const map = storeMap(store);
   const tel = store.phone.replace(/\D/g, "");
   return (
     <div className="container-x grid gap-8 pb-24 lg:grid-cols-[1fr_1.2fr]">
@@ -55,7 +55,7 @@ async function Content() {
           </address>
           {store.directionsNote && <p className="mt-1 text-muted">{store.directionsNote}</p>}
           <a
-            href={`https://www.google.com/maps/dir/?api=1&destination=${mapsQuery}`}
+            href={map.directionsHref}
             target="_blank"
             rel="noopener noreferrer"
             className="btn btn-primary btn-sm mt-4"
@@ -100,7 +100,7 @@ async function Content() {
       <div className="relative min-h-[24rem] overflow-hidden rounded-[var(--radius-card)] border border-line bg-mist">
         <iframe
           title={`Map showing ${store.name}`}
-          src={`https://www.google.com/maps?q=${mapsQuery}&z=16&output=embed`}
+          src={map.embedSrc}
           className="absolute inset-0 h-full w-full"
           loading="lazy"
           referrerPolicy="no-referrer-when-downgrade"
